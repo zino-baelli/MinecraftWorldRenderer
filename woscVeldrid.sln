@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "woscVeldrid", "woscVeldrid\woscVeldrid.csproj", "{A3ACFCA1-8DFF-4354-B75D-1729D8251D2E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A3ACFCA1-8DFF-4354-B75D-1729D8251D2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3ACFCA1-8DFF-4354-B75D-1729D8251D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3ACFCA1-8DFF-4354-B75D-1729D8251D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3ACFCA1-8DFF-4354-B75D-1729D8251D2E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
