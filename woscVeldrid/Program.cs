@@ -35,4 +35,5 @@ if (chunkData == null)
 
 var nbtData = NbtParser.LoadChunkNBT(chunkData);
 NbtDebugger.PrintTag(nbtData);
+var decodedChunk = NbtDecoder.DecodeChunk(nbtData);
 var i = 1;
