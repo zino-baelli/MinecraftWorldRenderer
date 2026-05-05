@@ -5,9 +5,14 @@ namespace woscVeldrid;
 public class NbtDecoder
 {
     
-    public static List<ChunkSection> DecodeChunk(NbtCompound chunk)
+    public static Chunk DecodeChunk(NbtCompound chunk)
     {
+        var Chunk = new Chunk();
         var level = chunk.Get<NbtCompound>("Level");
+        var xPos = level.Get<NbtInt>("xPos");
+        var zPos = level.Get<NbtInt>("zPos");
+        Chunk.X = xPos.Value;
+        Chunk.Z = zPos.Value;
         var sections = level.Get<NbtList>("Sections");
 
         var result = new List<ChunkSection>();
@@ -18,8 +23,9 @@ public class NbtDecoder
             if (decoded != null)
                 result.Add(decoded);
         }
-
-        return result;
+        
+        Chunk.Sections = result.ToArray();
+        return Chunk;
     }
     
     private static ChunkSection? DecodeSection(NbtCompound section)
@@ -50,7 +56,11 @@ public class NbtDecoder
         for (int i = 0; i < 4096; i++)
         {
             int paletteIndex = ExtractIndex(blockStates, i, bitsPerBlock);
-            var block = palette[paletteIndex];
+            var block = new Block("invalid_Palette_id");
+            if (paletteIndex < palette.Count)
+            {
+                block = palette[paletteIndex];
+            }
 
             int x = i % 16;
             int z = (i / 16) % 16;
@@ -136,22 +146,15 @@ public class NbtDecoder
         var section = new ChunkSection { Y = y };
 
         for (int x = 0; x < 16; x++)
-        for (int z = 0; z < 16; z++)
-        for (int yy = 0; yy < 16; yy++)
-            section.Blocks[x, yy, z] = block;
+            for (int z = 0; z < 16; z++)
+                for (int yy = 0; yy < 16; yy++)
+                    section.Blocks[x, yy, z] = block;
 
         return section;
     }
     
-    public class Block
-    {
-        public string Name;
-        public Dictionary<string, string>? Properties;
-    }
 
-    public class ChunkSection
-    {
-        public int Y; // section Y (not world Y)
-        public Block[,,] Blocks = new Block[16, 16, 16];
-    }
+
+    
+    
 }

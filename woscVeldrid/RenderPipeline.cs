@@ -71,7 +71,7 @@ public class RenderPipeline
         _cameraMatrices[0] = Matrix4x4.Identity;
         
         //view Matrix
-        var cameraPosition =  new Vector3(0, 0,-2);
+        var cameraPosition =  new Vector3(0, 5,-2);
         var target = new Vector3(0, 0, 0);
         _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, target, Vector3.UnitY);
         
@@ -198,7 +198,27 @@ public class RenderPipeline
     
         _commandList = factory.CreateCommandList();
     }
-    
+
+    public void UpdateMap(ref GraphicsDevice graphicsDevice, Mesh mesh)
+    {
+        var vertices = new List<VertexPositionColor>();
+        var indices = new List<ushort>();
+        
+        
+        var colorIndex = 0;
+        foreach (var vertex in mesh.Vertices)
+        {
+            vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
+        }
+
+        foreach (var meshIndex in mesh.Indices)
+        {
+            indices.Add((ushort)(meshIndex));
+        }
+        
+        graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
+        graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
+    }
     
     public void Update( ref GraphicsDevice graphicsDevice)
     {

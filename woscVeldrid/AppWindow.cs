@@ -28,7 +28,7 @@ public class AppWindow
    
     
 
-    public void Render()
+    public void Render(Mesh mesh)
     {
         if (_window != null &&    _window.Exists)
         {
@@ -87,7 +87,8 @@ public class AppWindow
             float deltaTime = (float)(now - lastTime);
             lastTime = now;
             _renderPipeline.UpdateTime(ref _graphicsDevice, deltaTime);
-            _renderPipeline.Update(ref _graphicsDevice);
+            // _renderPipeline.Update(ref _graphicsDevice);
+            _renderPipeline.UpdateMap(ref _graphicsDevice, mesh);
             
             
           
