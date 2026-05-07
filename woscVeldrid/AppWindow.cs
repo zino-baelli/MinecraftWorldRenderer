@@ -106,23 +106,37 @@ public class AppWindow
                 rd.LaunchReplayUI();
             }
                 
-            if(keyEvent.Key == Veldrid.Key.W)
-            {
-                _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,0.01f));
-            }
-            if(keyEvent.Key == Veldrid.Key.A)
-            {
-                _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0.01f,0,0));
-            }
-            if(keyEvent.Key == Veldrid.Key.S)
-            {
-                _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,-0.01f));
-            }
-            if(keyEvent.Key == Veldrid.Key.D)
-            {
-                _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(-0.01f,0,0));
-            }
+            // if(keyEvent.Key == Veldrid.Key.W)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,0.01f));
+            // }
+            // if(keyEvent.Key == Veldrid.Key.A)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0.01f,0,0));
+            // }
+            // if(keyEvent.Key == Veldrid.Key.S)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,-0.01f));
+            // }
+            // if(keyEvent.Key == Veldrid.Key.D)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(-0.01f,0,0));
+            // }
+            //
+            // if (keyEvent.Key == Veldrid.Key.E)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,1,0));
+            // }
+            // if (keyEvent.Key == Veldrid.Key.Q)
+            // {
+            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,-1,0));
+            // }
         };
+        
+        HashSet<Key> _keysDown = new HashSet<Key>();
+        
+        _window.KeyDown += e => _keysDown.Add(e.Key);
+        _window.KeyUp += e => _keysDown.Remove(e.Key);
 
 
         while (_window.Exists)
@@ -146,6 +160,28 @@ public class AppWindow
             double now = stopwatch.Elapsed.TotalSeconds;
             float deltaTime = (float)(now - lastTime);
             lastTime = now;
+            
+            Vector3 movement = Vector3.Zero;
+            float speed = 10f; // units per second
+
+            if (_keysDown.Contains(Key.W))
+            {
+                // Console.WriteLine("W");
+                movement += new Vector3(0, 0, 1);
+            }
+            if (_keysDown.Contains(Key.S)) movement += new Vector3(0, 0, -1);
+            if (_keysDown.Contains(Key.A)) movement += new Vector3(1, 0, 0);
+            if (_keysDown.Contains(Key.D)) movement += new Vector3(-1, 0, 0);
+            if (_keysDown.Contains(Key.E)) movement += new Vector3(0, 1, 0);
+            if (_keysDown.Contains(Key.Q)) movement += new Vector3(0, -1, 0);
+
+            if (movement != Vector3.Zero)
+            {
+                movement = Vector3.Normalize(movement) * speed * deltaTime;
+                _renderPipeline.UpdateCamera(ref _graphicsDevice, movement);
+            }
+            
+            
             _renderPipeline.UpdateTime(ref _graphicsDevice, deltaTime);
             // _renderPipeline.Update(ref _graphicsDevice);
             // _renderPipeline.UpdateMap(ref _graphicsDevice, mesh);

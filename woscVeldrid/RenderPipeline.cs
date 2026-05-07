@@ -42,6 +42,8 @@ public class RenderPipeline
     private int _maxAmountChunks = 10;
     private const float _triSize = 0.1f;
     private Vector3 _cameraPosition;
+    private Vector3 _cameraForward;
+    private Vector3 _cameraTarget;
     private float _time;
 
     
@@ -69,6 +71,8 @@ public class RenderPipeline
         List<VertexPositionNormal> vertices = new();
         List<uint> indices = new();
         
+        _cameraForward = new Vector3(0, 0, -1);
+        
         //model Matrix
         _cameraMatrices[0] = Matrix4x4.Identity;
         
@@ -78,9 +82,9 @@ public class RenderPipeline
         _cameraPosition = cameraPosition;
 
         // var target = new Vector3(0, 0, 0);
-        var target = new Vector3(6100, 1, 1520);
+        _cameraTarget = new Vector3(6100, 1, 1520);
 
-        _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, target, Vector3.UnitY);
+        _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, _cameraTarget, Vector3.UnitY);
         
         //projection Matrix with 60deg fov
         _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
@@ -446,13 +450,34 @@ public class RenderPipeline
         // Console.WriteLine(_time);
     }
 
-    public void UpdateCamera(ref GraphicsDevice graphicsDevice, Vector3 cameraPosition)
+    public void UpdateCamera(ref GraphicsDevice graphicsDevice, Vector3 movement)
     {
-        var target = new Vector3(0, 0, 0);
-        _cameraMatrices[1] = Matrix4x4.CreateLookAt(_cameraPosition += cameraPosition, target, Vector3.UnitY);
+        Console.WriteLine($"camera pos before: {_cameraPosition.X}, {_cameraPosition.Y}, {_cameraPosition.Z}");
+        Console.WriteLine($"lookat pos before: {_cameraTarget.X}, {_cameraTarget.Y}, {_cameraTarget.Z}");
+
+        // Vector3 _cameraForward = new Vector3(0, 0, -1);
+        Vector3 right = Vector3.Normalize(Vector3.Cross(_cameraForward, Vector3.UnitY));
+
+        _cameraPosition += 
+            movement.Z * _cameraForward +
+            movement.X * right +
+            movement.Y * Vector3.UnitY;
+        
+        // _cameraTarget = _cameraPosition + _cameraForward;
+        
+        Console.WriteLine($"camera pos after: {_cameraPosition.X}, {_cameraPosition.Y}, {_cameraPosition.Z}");
+        Console.WriteLine($"lookat pos after: {_cameraTarget.X}, {_cameraTarget.Y}, {_cameraTarget.Z}");
+
+
+
+        _cameraMatrices[1] = Matrix4x4.CreateLookAt(
+            _cameraPosition,
+            _cameraTarget,
+            Vector3.UnitY
+        );
         
         //projection Matrix with 60deg fov
-        _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
+        _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, (float)_width/_height, 0.1f, 10000);
         
         graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
     }
