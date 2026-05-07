@@ -2,6 +2,6 @@
 
 public class Mesh
 {
-    public List<Vertex> Vertices;
-    public List<uint> Indices;
+    public List<Vertex> Vertices = new();
+    public List<uint> Indices = new();
 }

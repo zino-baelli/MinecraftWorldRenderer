@@ -27,7 +27,7 @@ for (int x = 0; x < 32; x++)
             }
             foundX = x;
             foundZ = z;
-            Console.WriteLine($"Using chunk {x},{z}");
+            // Console.WriteLine($"Using chunk {x},{z}");
             var nbtData = NbtParser.LoadChunkNBT(chunkData);
             data[z + 32  * x] = NbtDecoder.DecodeChunk(nbtData);
             // data[z + 32  * x] = new Chunk(foundX, foundZ, NbtDecoder.DecodeChunk(nbtData).ToArray());
@@ -50,8 +50,12 @@ if (chunkData == null)
 // NbtDebugger.PrintTag(nbtData);
 // var decodedChunk = NbtDecoder.DecodeChunk(nbtData);
 
-var mesh = MeshBuilder.BuildMesh(data[0]);
+File.WriteAllText(@"C:\Users\zino\Desktop\renderDocCaptures\chunk0.csv", data[0].toCsv());
 
-windowRenderer.Render(mesh);
+var mesh = MeshBuilder.BuildMesh(data[0]);
+var mesh2 = MeshBuilder.BuildMesh(data[1]);
+var meshes = new[] { mesh, mesh2, MeshBuilder.BuildMesh(data[2]),  MeshBuilder.BuildMesh(data[3]) };
+// var meshes = new[] { MeshBuilder.BuildMesh(data[2]) };
+windowRenderer.Render(meshes);
 
 var i = 1;

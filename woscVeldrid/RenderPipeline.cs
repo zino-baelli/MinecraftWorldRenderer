@@ -55,7 +55,8 @@ public class RenderPipeline
     
     public void CreateResources(
         ref GraphicsDevice graphicsDevice,
-        PrimitiveTopology topology
+        PrimitiveTopology topology,
+        Mesh[] meshes
         )
     {
         
@@ -64,56 +65,86 @@ public class RenderPipeline
         const float triSize = 0.1f; // small triangle side length
     
         // Build vertex list: 3 vertices per depth point
-        List<VertexPositionColor> vertices = new();
-        List<ushort> indices = new();
+        // List<VertexPositionColor> vertices = new();
+        List<VertexPositionNormal> vertices = new();
+        List<uint> indices = new();
         
         //model Matrix
         _cameraMatrices[0] = Matrix4x4.Identity;
         
         //view Matrix
-        var cameraPosition =  new Vector3(0, 5,-2);
-        var target = new Vector3(0, 0, 0);
+        // var cameraPosition =  new Vector3(0, 5,-2);
+        var cameraPosition =  new Vector3(6000, 5,1500);
+        _cameraPosition = cameraPosition;
+
+        // var target = new Vector3(0, 0, 0);
+        var target = new Vector3(6100, 1, 1520);
+
         _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, target, Vector3.UnitY);
         
         //projection Matrix with 60deg fov
         _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
         
-        ushort baseIndex = 0;
+        uint baseIndex = 0;
         var colorIndex = 0;
         
         // foreach (var p in depthPoints)
-        var p = new Vector3(0, 1, 0);
-        {
-            // Build a small triangle at the point
-            Vector3 v0 = new Vector3(p.X, p.Y + triSize, p.Z);
-            Vector3 v1 = new Vector3(p.X - triSize, p.Y - triSize, p.Z);
-            Vector3 v2 = new Vector3(p.X + triSize, p.Y - triSize, p.Z);
-            
-            vertices.Add(new VertexPositionColor(v0, RgbaFloat.Blue));
-            vertices.Add(new VertexPositionColor(v1, RgbaFloat.Blue));
-            vertices.Add(new VertexPositionColor(v2, RgbaFloat.Blue));
-        
-            indices.Add((ushort)(baseIndex + 0));
-            indices.Add((ushort)(baseIndex + 1));
-            indices.Add((ushort)(baseIndex + 2));
-        
-            baseIndex += 3;
-        }
-        
+        // var p = new Vector3(0, 1, 0);
+        // {
+        //     // Build a small triangle at the point
+        //     Vector3 v0 = new Vector3(p.X, p.Y + triSize, p.Z);
+        //     Vector3 v1 = new Vector3(p.X - triSize, p.Y - triSize, p.Z);
+        //     Vector3 v2 = new Vector3(p.X + triSize, p.Y - triSize, p.Z);
+        //     
+        //     vertices.Add(new VertexPositionColor(v0, RgbaFloat.Blue));
+        //     vertices.Add(new VertexPositionColor(v1, RgbaFloat.Blue));
+        //     vertices.Add(new VertexPositionColor(v2, RgbaFloat.Blue));
+        //
+        //     indices.Add((uint)(baseIndex + 0));
+        //     indices.Add((uint)(baseIndex + 1));
+        //     indices.Add((uint)(baseIndex + 2));
+        //
+        //     baseIndex += 3;
+        // }
 
+        foreach (var mesh in meshes)
+        {
+            foreach (var vertex in mesh.Vertices)
+            {
+                // vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
+                vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
+
+            }
+            
+            foreach (var meshIndex in mesh.Indices)
+            {
+                // indices.Add((uint)(baseIndex+meshIndex));
+                indices.Add(baseIndex+meshIndex);
+            }
+            baseIndex += (uint)mesh.Vertices.Count;
+        }
+
+     
+      
         
         _indexCount = indices.Count;
+        _vertexCount = vertices.Count;
     
         // Create buffers
         _vertexBuffer = factory.CreateBuffer(
-            new BufferDescription((uint)(_width * _height * 10 * VertexPositionColor.SizeInBytes),
+            new BufferDescription((uint)(_vertexCount * VertexPositionNormal.SizeInBytes),
                 BufferUsage.VertexBuffer));
+        // _vertexBuffer = factory.CreateBuffer(
+        //     new BufferDescription((uint)(_vertexCount * VertexPositionColor.SizeInBytes),
+        //         BufferUsage.VertexBuffer));
 
         _indexBuffer = factory.CreateBuffer(
             new BufferDescription(
-                (uint)(_width * _height * 10 * sizeof(ushort)),
+                (uint)(_indexCount * sizeof(uint)),
                 BufferUsage.IndexBuffer));
         
+        graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
+        graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
 
         // _colorBuffer = factory.CreateBuffer(
         //     new BufferDescription((uint)(_width * _height * sizeof(float) * 3),
@@ -133,12 +164,14 @@ public class RenderPipeline
         graphicsDevice.UpdateBuffer(_pointSettingsBuffer, 0, pointData);
     
         // Create vertex layout
-        VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
-            new VertexElementDescription("Position", VertexElementSemantic.Position, VertexElementFormat.Float3),
-            new VertexElementDescription("Color", VertexElementSemantic.Color, VertexElementFormat.Float4));
         // VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
-        //     new VertexElementDescription("Position", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float3),
-        //     new VertexElementDescription("Color", VertexElementSemantic.TextureCoordinate, VertexElementFormat.Float4));
+        //     new VertexElementDescription("Position", VertexElementSemantic.Position, VertexElementFormat.Float3),
+        //     new VertexElementDescription("Color", VertexElementSemantic.Color, VertexElementFormat.Float4));
+        VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
+            new VertexElementDescription("Position", VertexElementSemantic.Position,
+                VertexElementFormat.Float3),
+            new VertexElementDescription("Normal", VertexElementSemantic.Normal, VertexElementFormat.Float3)
+        );
 
         _cameraLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
             new ResourceLayoutElementDescription("CameraBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)
@@ -202,19 +235,49 @@ public class RenderPipeline
     public void UpdateMap(ref GraphicsDevice graphicsDevice, Mesh mesh)
     {
         var vertices = new List<VertexPositionColor>();
-        var indices = new List<ushort>();
+        var indices = new List<uint>();
         
+        //for testing
+        var baseIndex = 0;
+        var p = new Vector3(0, 1, 0);
+        {
+            // Build a small triangle at the point
+            Vector3 v0 = new Vector3(p.X, p.Y + _triSize, p.Z);
+            Vector3 v1 = new Vector3(p.X - _triSize, p.Y - _triSize, p.Z);
+            Vector3 v2 = new Vector3(p.X + _triSize, p.Y - _triSize, p.Z);
+            
+          
+            var color = RgbaFloat.White;
+
+            // var colorData = pointcloud.colors[colorIndex];
+
+            // color = new RgbaFloat(colorData.X,  colorData.Y, colorData.Z, 1) ; 
+            
+            vertices.Add(new VertexPositionColor(v0, color));
+            vertices.Add(new VertexPositionColor(v1, color));
+            vertices.Add(new VertexPositionColor(v2, color));
+            
+            indices.Add((uint)(baseIndex + 0));
+            indices.Add((uint)(baseIndex + 1));
+            indices.Add((uint)(baseIndex + 2));
+            
+            // baseIndex += 3;
+            
+        }
         
         var colorIndex = 0;
         foreach (var vertex in mesh.Vertices)
         {
             vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
         }
-
+        
         foreach (var meshIndex in mesh.Indices)
         {
-            indices.Add((ushort)(meshIndex));
+            // indices.Add((uint)(baseIndex+meshIndex));
+            indices.Add(meshIndex);
         }
+        
+        _vertexCount = vertices.Count;
         
         graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
         graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
@@ -224,9 +287,9 @@ public class RenderPipeline
     {
        
         var vertices = new List<VertexPositionColor>();
-        var indices = new List<ushort>();
+        var indices = new List<uint>();
         // UpdateCameraMatrices(pointcloud, ref graphicsDevice);
-        ushort baseIndex = 0;
+        uint baseIndex = 0;
         
         var colorIndex = 0;
         // foreach (var p in depthPoints)
@@ -249,9 +312,9 @@ public class RenderPipeline
             vertices.Add(new VertexPositionColor(v1, color));
             vertices.Add(new VertexPositionColor(v2, color));
             
-            indices.Add((ushort)(baseIndex + 0));
-            indices.Add((ushort)(baseIndex + 1));
-            indices.Add((ushort)(baseIndex + 2));
+            indices.Add((uint)(baseIndex + 0));
+            indices.Add((uint)(baseIndex + 1));
+            indices.Add((uint)(baseIndex + 2));
             
             baseIndex += 3;
             
@@ -299,7 +362,7 @@ public class RenderPipeline
         
         _commandList.SetPipeline(_pipeline);
         _commandList.SetVertexBuffer(0, _vertexBuffer);
-        _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt16);
+        _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
         _commandList.SetGraphicsResourceSet(0, _cameraSet);
         _commandList.SetGraphicsResourceSet(1, _pointSettingsSet);
         _commandList.SetGraphicsResourceSet(2, _timeSet); 
@@ -309,12 +372,18 @@ public class RenderPipeline
         //     indexStart: 0,
         //     vertexOffset: 0,
         //     instanceStart: 0);
-        _commandList.Draw(
-            vertexCount: (uint)_vertexCount,
-            instanceCount: 1,
-            vertexStart: 0,
-            instanceStart: 0
-        );
+        // _commandList.Draw(
+        //     vertexCount: (uint)_vertexCount,
+        //     instanceCount: 1,
+        //     vertexStart: 0,
+        //     instanceStart: 0
+        // );
+        _commandList.DrawIndexed(
+            (uint)_indexCount,
+            1,
+            0,
+            0,
+            0);
         _commandList.End();
 
         graphicsDevice.SubmitCommands(_commandList);
@@ -334,6 +403,20 @@ public class RenderPipeline
             Position = pos;
             Color = color;
         }
+    }
+    
+    struct VertexPositionNormal
+    {
+        public Vector3 Position;
+        public Vector3 Normal;
+
+        public VertexPositionNormal(Vector3 pos, Vector3 normal)
+        {
+            Position = pos;
+            Normal = normal;
+        }
+
+        public const uint SizeInBytes = 24;
     }
     
     struct TimeData
@@ -361,6 +444,17 @@ public class RenderPipeline
         };
         graphicsDevice.UpdateBuffer(_timeBuffer, 0, ref tdata);
         // Console.WriteLine(_time);
+    }
+
+    public void UpdateCamera(ref GraphicsDevice graphicsDevice, Vector3 cameraPosition)
+    {
+        var target = new Vector3(0, 0, 0);
+        _cameraMatrices[1] = Matrix4x4.CreateLookAt(_cameraPosition += cameraPosition, target, Vector3.UnitY);
+        
+        //projection Matrix with 60deg fov
+        _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
+        
+        graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
     }
 
     public void DisposeResources()
