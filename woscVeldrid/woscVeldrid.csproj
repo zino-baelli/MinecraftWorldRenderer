@@ -10,14 +10,12 @@
     <ItemGroup>
       <PackageReference Include="fNbt" Version="1.0.0" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+      <PackageReference Include="Meshoptimizer.NET" Version="1.0.7" />
       <PackageReference Include="Veldrid" Version="4.9.0" />
+      <PackageReference Include="Veldrid.ImGui" Version="5.72.0" />
       <PackageReference Include="Veldrid.RenderDoc" Version="1.0.1" />
       <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
       <PackageReference Include="Veldrid.StartupUtilities" Version="4.9.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="TestData\" />
     </ItemGroup>
 
 </Project>

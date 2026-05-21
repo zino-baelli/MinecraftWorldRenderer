@@ -21,6 +21,9 @@ public class AppWindow
     private RenderPipeline _renderPipeline;
     private Sdl2Window _window;
     
+    // public Dictionary<string, int> BlockIds { get; set; }
+    public Dictionary<int, Vector3> ColorPalette { get; set; }
+
     public AppWindow(int width, int height, string title)
     {
         _width = width;
@@ -57,7 +60,10 @@ public class AppWindow
         var options = new GraphicsDeviceOptions
         {
             PreferStandardClipSpaceYDirection = true,
-            PreferDepthRangeZeroToOne = true
+            PreferDepthRangeZeroToOne = true,
+            SwapchainDepthFormat = PixelFormat.D32_Float_S8_UInt,
+            SyncToVerticalBlank = true,
+            ResourceBindingModel = ResourceBindingModel.Improved
         };
         
         RenderDoc rd;
@@ -68,7 +74,9 @@ public class AppWindow
         
         _graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(options, _window);
         
-
+        // ImGuiRenderer imguiRenderer = new ImGuiRenderer(
+        //     _graphicsDevice, _graphicsDevice.MainSwapchain.Framebuffer.OutputDescription,
+        //     (int)_graphicsDevice.MainSwapchain.Framebuffer.Width, (int)_graphicsDevice.MainSwapchain.Framebuffer.Height);
         
         // var vertexCode = File.ReadAllText("../../../Shader/vertexShader.glsl");
         //
@@ -83,7 +91,7 @@ public class AppWindow
   
         
         
-        _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, meshes);
+        _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, meshes, ColorPalette);
 
         
       
@@ -105,32 +113,7 @@ public class AppWindow
             {
                 rd.LaunchReplayUI();
             }
-                
-            // if(keyEvent.Key == Veldrid.Key.W)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,0.01f));
-            // }
-            // if(keyEvent.Key == Veldrid.Key.A)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0.01f,0,0));
-            // }
-            // if(keyEvent.Key == Veldrid.Key.S)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,0,-0.01f));
-            // }
-            // if(keyEvent.Key == Veldrid.Key.D)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(-0.01f,0,0));
-            // }
-            //
-            // if (keyEvent.Key == Veldrid.Key.E)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,1,0));
-            // }
-            // if (keyEvent.Key == Veldrid.Key.Q)
-            // {
-            //     _renderPipeline.UpdateCamera(ref _graphicsDevice, new Vector3(0,-1,0));
-            // }
+            
         };
         
         HashSet<Key> _keysDown = new HashSet<Key>();
@@ -138,7 +121,8 @@ public class AppWindow
         _window.KeyDown += e => _keysDown.Add(e.Key);
         _window.KeyUp += e => _keysDown.Remove(e.Key);
 
-
+        var drawOnce = 0;
+        
         while (_window.Exists)
         {
             _window.PumpEvents();
@@ -162,7 +146,8 @@ public class AppWindow
             lastTime = now;
             
             Vector3 movement = Vector3.Zero;
-            float speed = 10f; // units per second
+            Vector3 rotation = Vector3.Zero;
+            float speed = 50f; // units per second
 
             if (_keysDown.Contains(Key.W))
             {
@@ -174,24 +159,43 @@ public class AppWindow
             if (_keysDown.Contains(Key.D)) movement += new Vector3(-1, 0, 0);
             if (_keysDown.Contains(Key.E)) movement += new Vector3(0, 1, 0);
             if (_keysDown.Contains(Key.Q)) movement += new Vector3(0, -1, 0);
+            if (_keysDown.Contains(Key.Left)) rotation += new Vector3(0, 1, 0);
+            if (_keysDown.Contains(Key.Right)) rotation += new Vector3(0, -1, 0);
+            if (_keysDown.Contains(Key.Up)) rotation += new Vector3(1, 0, 0);
+            if (_keysDown.Contains(Key.Down)) rotation += new Vector3(-1, 0, 0);
+            
 
             if (movement != Vector3.Zero)
             {
                 movement = Vector3.Normalize(movement) * speed * deltaTime;
-                _renderPipeline.UpdateCamera(ref _graphicsDevice, movement);
+                _renderPipeline.UpdateCamera(ref _graphicsDevice, movement, Vector3.Zero, deltaTime);
+            }
+
+            if (rotation != Vector3.Zero)
+            {
+                rotation = Vector3.Normalize(rotation) * speed * deltaTime;
+                _renderPipeline.UpdateCamera(ref _graphicsDevice, Vector3.Zero, rotation, deltaTime);
             }
             
             
-            _renderPipeline.UpdateTime(ref _graphicsDevice, deltaTime);
+            // _renderPipeline.UpdateTime(ref _graphicsDevice, deltaTime);
             // _renderPipeline.Update(ref _graphicsDevice);
             // _renderPipeline.UpdateMap(ref _graphicsDevice, mesh);
             
             // rd.TriggerCapture(); // capture next frame
-
-          
-             _renderPipeline.Draw(ref _graphicsDevice);
-             
             
+            
+            var cameraPositon = _renderPipeline.getCameraPosition();
+            
+
+            // while (drawOnce < 1)
+            {
+                _renderPipeline.Draw(ref _graphicsDevice);
+                // _renderPipeline.TestDraw(ref _graphicsDevice);
+                drawOnce++;
+            }
+             
+           
             
         }
 

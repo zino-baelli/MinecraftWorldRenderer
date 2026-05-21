@@ -6,56 +6,130 @@ var windowRenderer = new AppWindow(1920, 1080, "WoSc");
 // windowRenderer.Render();
 
 var path = "../../../TestData/r.12.3.mca";
+string[] files = Directory.GetFiles(@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region", "*.mca", SearchOption.TopDirectoryOnly);
 
-byte[] chunkData = null;
-Chunk[] data = new Chunk[1024]; //amount of chunks per .mca file are 32X32
-int foundX = -1, foundZ = -1;
+var chunkAmount = files.Length * 1024;
+var fileRenderAmount = 1;
 
-int chunkCounter = 0;
+HashSet<string> blockTypeSet = new HashSet<string>();
+var blockNameId = Helper.GetBlockToIdFromFile("../../../TestData/blockPaletteComplete.csv");
+var blockPalette = Helper.GetColorPaletteFromFile("../../../TestData/blockPaletteComplete.csv");
 
-for (int x = 0; x < 32; x++)
+
+// Chunk[] data = new Chunk[1024]; //amount of chunks per .mca file are 32X32
+List<Chunk> data = new List<Chunk>();
+
+//
+// byte[] chunkData = null;
+// int foundX = -1, foundZ = -1;
+//
+// int chunkCounter = 0;
+//
+// for (int x = 0; x < 32; x++)
+// {
+//     for (int z = 0; z < 32; z++)
+//     {
+//         chunkData = MCAReader.ReadChunk(path, x, z);
+//
+//         if (chunkData != null)
+//         {
+//             if (x > 32 || z > 32)
+//             {
+//                 throw new IndexOutOfRangeException();
+//             }
+//
+//             foundX = x;
+//             foundZ = z;
+//             // Console.WriteLine($"Using chunk {x},{z}");
+//             var nbtData = NbtParser.LoadChunkNBT(chunkData);
+//             data[z + 32 * x] = NbtDecoder.DecodeChunk(nbtData);
+//             // data[z + 32  * x] = new Chunk(foundX, foundZ, NbtDecoder.DecodeChunk(nbtData).ToArray());
+//             // data[chunkCounter] = new Chunk(foundX, foundZ, NbtDecoder.DecodeChunk(nbtData).ToArray());
+//             chunkCounter++;
+//
+//             // break;
+//         }
+//     }
+//     // if (chunkData != null) break;
+// }
+//
+// if (chunkData == null)
+// {
+//     Console.WriteLine("No chunks found in this region!");
+//     return;
+// }
+
+for (int j = 0; j < fileRenderAmount; j++)
 {
-    for (int z = 0; z < 32; z++)
+    path = files[j];
+    byte[] chunkData = null;
+    int foundX = -1, foundZ = -1;
+
+    int chunkCounter = 0;
+
+    for (int x = 0; x < 32; x++)
     {
-        chunkData = MCAReader.ReadChunk(path, x, z);
-
-        if (chunkData != null)
+        for (int z = 0; z < 32; z++)
         {
-            if (x > 32 || z > 32)
+            chunkData = MCAReader.ReadChunk(path, x, z);
+
+            if (chunkData != null)
             {
-                throw new IndexOutOfRangeException();
+                if (x > 32 || z > 32)
+                {
+                    throw new IndexOutOfRangeException();
+                }
+
+                foundX = x;
+                foundZ = z;
+                // Console.WriteLine($"Using chunk {x},{z}");
+                var nbtData = NbtParser.LoadChunkNBT(chunkData);
+                data.Add(NbtDecoder.DecodeChunk(nbtData/*, out HashSet<string> blockTypes*/));
+                chunkCounter++;
+                // foreach (var blockType in blockTypes)
+                // {
+                //     blockTypeSet.Add(blockType);
+                // }
+                // break;
             }
-            foundX = x;
-            foundZ = z;
-            // Console.WriteLine($"Using chunk {x},{z}");
-            var nbtData = NbtParser.LoadChunkNBT(chunkData);
-            data[z + 32  * x] = NbtDecoder.DecodeChunk(nbtData);
-            // data[z + 32  * x] = new Chunk(foundX, foundZ, NbtDecoder.DecodeChunk(nbtData).ToArray());
-            // data[chunkCounter] = new Chunk(foundX, foundZ, NbtDecoder.DecodeChunk(nbtData).ToArray());
-            chunkCounter++;
-
-            // break;
         }
+        // if (chunkData != null) break;
     }
-    // if (chunkData != null) break;
-}
 
-if (chunkData == null)
-{
-    Console.WriteLine("No chunks found in this region!");
-    return;
+    if (chunkData == null)
+    {
+        // Console.WriteLine("No chunks found in this region!");
+        // return;
+    }
+    // Console.WriteLine($"Finished file {files[j]}");
 }
+Console.WriteLine("All chunks read from files");
+
+// Helper.WriteBlockTypesToFile(blockTypeSet.ToList());
 
 // var nbtData = NbtParser.LoadChunkNBT(chunkData);
 // NbtDebugger.PrintTag(nbtData);
 // var decodedChunk = NbtDecoder.DecodeChunk(nbtData);
 
-File.WriteAllText(@"C:\Users\zino\Desktop\renderDocCaptures\chunk0.csv", data[0].toCsv());
+// File.WriteAllText(@"C:\Users\zino\Desktop\renderDocCaptures\chunk0.csv", data[0].toCsv());
 
-var mesh = MeshBuilder.BuildMesh(data[0]);
-var mesh2 = MeshBuilder.BuildMesh(data[1]);
-var meshes = new[] { mesh, mesh2, MeshBuilder.BuildMesh(data[2]),  MeshBuilder.BuildMesh(data[3]) };
+// var mesh = MeshBuilder.BuildMesh(data[0]);
+// var mesh2 = MeshBuilder.BuildMesh(data[1]);
+// var meshes = new[] { mesh, mesh2, MeshBuilder.BuildMesh(data[2]),  MeshBuilder.BuildMesh(data[3]) };
 // var meshes = new[] { MeshBuilder.BuildMesh(data[2]) };
+//
+// var meshes = new Mesh[data.Length];
+// for (int j = 0; j < data.Length; j++)
+var meshes = new Mesh[data.Count];
+Console.WriteLine("Total meshes: " + meshes.Length);
+for (int j = 0; j < data.Count; j++)
+{
+    meshes[j] = MeshBuilder.BuildMesh(data[j], blockNameId);
+    // Console.WriteLine($"Mesh {j} built");
+}
+Console.WriteLine("All meshes built");
+// windowRenderer.BlockIds = blockNameId;
+windowRenderer.ColorPalette = blockPalette;
 windowRenderer.Render(meshes);
 
 var i = 1;

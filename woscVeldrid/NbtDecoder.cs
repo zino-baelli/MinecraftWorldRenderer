@@ -5,8 +5,9 @@ namespace woscVeldrid;
 public class NbtDecoder
 {
     
-    public static Chunk DecodeChunk(NbtCompound chunk)
+    public static Chunk DecodeChunk(NbtCompound chunk/*, out HashSet<string> blockTypes*/)
     {
+        // blockTypes = new HashSet<string>();
         var Chunk = new Chunk();
         var level = chunk.Get<NbtCompound>("Level");
         var xPos = level.Get<NbtInt>("xPos");
@@ -19,18 +20,25 @@ public class NbtDecoder
 
         foreach (NbtCompound section in sections)
         {
-            var decoded = DecodeSection(section);
+            var decoded = DecodeSection(section/*, out List<string> types*/);
             if (decoded != null)
+            {
                 result.Add(decoded);
+                // foreach (var blockType in types)
+                // {
+                //     blockTypes.Add(blockType);
+                // }
+            }
         }
         
         Chunk.Sections = result.ToArray();
         return Chunk;
     }
     
-    private static ChunkSection? DecodeSection(NbtCompound section)
+    private static ChunkSection? DecodeSection(NbtCompound section/*, out List<string> */)
     {
         int sectionY = section.Get<NbtByte>("Y").Value;
+        // blockTypes = new List<string>();
 
         // If no palette, it's empty (air)
         if (!section.Contains("Palette"))
@@ -44,6 +52,7 @@ public class NbtDecoder
         // Single-value palette optimization
         if (!section.Contains("BlockStates"))
         {
+            // blockTypes.Add(palette[0].Name);
             return CreateFilledSection(sectionY, palette[0]);
         }
 
@@ -67,6 +76,7 @@ public class NbtDecoder
             int y = i / 256;
 
             chunkSection.Blocks[x, y, z] = block;
+            // blockTypes.Add(block.Name);
         }
 
         return chunkSection;

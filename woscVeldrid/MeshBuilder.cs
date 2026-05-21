@@ -19,17 +19,22 @@ public static class MeshBuilder
     private static readonly Vector3[][] FaceVertices =
     {
         // Right
-        new[] { new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(1,1,1), new Vector3(1,0,1) },
+        // new[] { new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(1,1,1), new Vector3(1,0,1) },
+        new[] { new Vector3(1,0,1), new Vector3(1,1,1), new Vector3(1,1,0), new Vector3(1,0,0) },
         // Left
-        new[] { new Vector3(0,0,1), new Vector3(0,1,1), new Vector3(0,1,0), new Vector3(0,0,0) },
+        // new[] { new Vector3(0,0,1), new Vector3(0,1,1), new Vector3(0,1,0), new Vector3(0,0,0) },
+        new[] { new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(0,1,1), new Vector3(0,0,1) },
         // Top
-        new[] { new Vector3(0,1,1), new Vector3(1,1,1), new Vector3(1,1,0), new Vector3(0,1,0) },
+        new[] { new Vector3(0,1,1), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,1,1) },
         // Bottom
-        new[] { new Vector3(0,0,0), new Vector3(1,0,0), new Vector3(1,0,1), new Vector3(0,0,1) },
+        // new[] { new Vector3(0,0,0), new Vector3(1,0,0), new Vector3(1,0,1), new Vector3(0,0,1) },
+        new[] { new Vector3(0,0,0), new Vector3(0,0,1), new Vector3(1,0,1), new Vector3(1,0,0) },
         // Front
-        new[] { new Vector3(1,0,1), new Vector3(1,1,1), new Vector3(0,1,1), new Vector3(0,0,1) },
+        // new[] { new Vector3(1,0,1), new Vector3(1,1,1), new Vector3(0,1,1), new Vector3(0,0,1) },
+        new[] { new Vector3(0,0,1), new Vector3(0,1,1), new Vector3(1,1,1), new Vector3(1,0,1) },
         // Back
-        new[] { new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,0,0) }
+        // new[] { new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,0,0) }
+        new[] { new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(0,1,0), new Vector3(0,0,0) }
     };
 
     private static readonly Vector2[] UVs =
@@ -37,7 +42,7 @@ public static class MeshBuilder
         new(0,0), new(0,1), new(1,1), new(1,0)
     };
 
-    public static Mesh BuildMesh(Chunk chunk)
+    public static Mesh BuildMesh(Chunk chunk, Dictionary<string,int> idDict)
     {
         var mesh = new Mesh();
 
@@ -60,7 +65,7 @@ public static class MeshBuilder
                     var neighbor = GetNeighbor(sectionDict, section.Y, x, y, z, face);
                     if (!IsAir(neighbor)) continue;
 
-                    AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face);
+                    AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face, idDict[block.Name]);
                 }
             }
         }
@@ -109,7 +114,7 @@ public static class MeshBuilder
         return section.Blocks[nx, ny, nz];
     }
 
-    private static void AddFace(Mesh mesh, int chunkX, int chunkZ, int sectionY, int x, int y, int z, int face)
+    private static void AddFace(Mesh mesh, int chunkX, int chunkZ, int sectionY, int x, int y, int z, int face, int colorId)
     {
         uint startIndex = (uint)mesh.Vertices.Count;
 
@@ -127,6 +132,7 @@ public static class MeshBuilder
             );
 
             mesh.Vertices.Add(vertex);
+            mesh.colorIds.Add(colorId);
         }
 
         // two triangles

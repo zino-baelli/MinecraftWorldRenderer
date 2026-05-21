@@ -16,6 +16,7 @@ public class RenderPipeline
     private DeviceBuffer _cameraBuffer;
     private DeviceBuffer _timeBuffer;
     private DeviceBuffer _pointSettingsBuffer;
+    private DeviceBuffer _paletteBuffer;
     private List<DeviceBuffer> _vertexBuffers = new();
     private List<DeviceBuffer> _indexBuffers = new();
     
@@ -23,9 +24,14 @@ public class RenderPipeline
     private ResourceLayout _cameraLayout;
     private ResourceLayout _timeLayout;
     private ResourceLayout _pointSettingsLayout;
+    private ResourceLayout _paletteLayout;
     private ResourceSet _cameraSet;
     private ResourceSet _timeSet;
     private ResourceSet _pointSettingsSet;
+    private ResourceSet _paletteSet;
+    
+    private Texture _depthTexture;
+    // private Framebuffer _framebuffer;
     
     private Matrix4x4[]  _cameraMatrices = new Matrix4x4[3];
     private Veldrid.Shader[] _shaders;
@@ -42,9 +48,10 @@ public class RenderPipeline
     private int _maxAmountChunks = 10;
     private const float _triSize = 0.1f;
     private Vector3 _cameraPosition;
-    private Vector3 _cameraForward;
+    private Vector3 _cameraRotation;
     private Vector3 _cameraTarget;
     private float _time;
+    private Dictionary<int, Vector3> _colorPalette;
 
     
     public RenderPipeline(string vertexCode, string fragmentCode, int width, int height)
@@ -58,33 +65,46 @@ public class RenderPipeline
     public void CreateResources(
         ref GraphicsDevice graphicsDevice,
         PrimitiveTopology topology,
-        Mesh[] meshes
+        Mesh[] meshes,
+        Dictionary<int,  Vector3> colorPalette
         )
     {
         
         ResourceFactory factory = graphicsDevice.ResourceFactory;
     
         const float triSize = 0.1f; // small triangle side length
+        
+        _colorPalette = colorPalette;
     
         // Build vertex list: 3 vertices per depth point
         // List<VertexPositionColor> vertices = new();
-        List<VertexPositionNormal> vertices = new();
+        // List<VertexPositionNormal> vertices = new();
+        List<VertexPositionNormalColor> vertices = new();
         List<uint> indices = new();
         
-        _cameraForward = new Vector3(0, 0, -1);
+        _cameraRotation = Vector3.Zero;
+        var rotation = Matrix4x4.CreateRotationX(_cameraRotation.X) * 
+                       Matrix4x4.CreateRotationY(_cameraRotation.Y)  * 
+                       Matrix4x4.CreateRotationZ(_cameraRotation.Z);
         
         //model Matrix
         _cameraMatrices[0] = Matrix4x4.Identity;
         
         //view Matrix
-        // var cameraPosition =  new Vector3(0, 5,-2);
-        var cameraPosition =  new Vector3(6000, 5,1500);
+        var cameraPosition =  new Vector3(0, 5,-2);
+        // var cameraPosition =  new Vector3(6000, 1,1500);
         _cameraPosition = cameraPosition;
+        
+        var forward =Vector3.Normalize(Vector3.Transform(Vector3.UnitZ, rotation));
+
 
         // var target = new Vector3(0, 0, 0);
-        _cameraTarget = new Vector3(6100, 1, 1520);
+        var target = _cameraPosition + forward;
+        // _cameraTarget = new Vector3(6100, 1, 1520);
 
         _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, _cameraTarget, Vector3.UnitY);
+        // _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, _cameraForward, Vector3.UnitY);
+
         
         //projection Matrix with 60deg fov
         _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
@@ -100,9 +120,12 @@ public class RenderPipeline
         //     Vector3 v1 = new Vector3(p.X - triSize, p.Y - triSize, p.Z);
         //     Vector3 v2 = new Vector3(p.X + triSize, p.Y - triSize, p.Z);
         //     
-        //     vertices.Add(new VertexPositionColor(v0, RgbaFloat.Blue));
-        //     vertices.Add(new VertexPositionColor(v1, RgbaFloat.Blue));
-        //     vertices.Add(new VertexPositionColor(v2, RgbaFloat.Blue));
+        //     // vertices.Add(new VertexPositionColor(v0, RgbaFloat.Blue));
+        //     // vertices.Add(new VertexPositionColor(v1, RgbaFloat.Blue));
+        //     // vertices.Add(new VertexPositionColor(v2, RgbaFloat.Blue));
+        //     vertices.Add(new VertexPositionNormal(v0, new Vector3(0, 1, 0)));
+        //     vertices.Add(new VertexPositionNormal(v1, new Vector3(0, 1, 0)));
+        //     vertices.Add(new VertexPositionNormal(v2, new Vector3(0, 1, 0)));
         //
         //     indices.Add((uint)(baseIndex + 0));
         //     indices.Add((uint)(baseIndex + 1));
@@ -110,13 +133,16 @@ public class RenderPipeline
         //
         //     baseIndex += 3;
         // }
-
+        var idx = 0;
         foreach (var mesh in meshes)
         {
+            idx = 0;
             foreach (var vertex in mesh.Vertices)
             {
                 // vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
-                vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
+                // vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
+                vertices.Add(new VertexPositionNormalColor(vertex.Position, vertex.Normal, mesh.colorIds[idx]));
+                idx++;
 
             }
             
@@ -136,8 +162,11 @@ public class RenderPipeline
     
         // Create buffers
         _vertexBuffer = factory.CreateBuffer(
-            new BufferDescription((uint)(_vertexCount * VertexPositionNormal.SizeInBytes),
+            new BufferDescription((uint)(_vertexCount * VertexPositionNormalColor.SizeInBytes),
                 BufferUsage.VertexBuffer));
+        // _vertexBuffer = factory.CreateBuffer(
+        //     new BufferDescription((uint)(_vertexCount * VertexPositionNormal.SizeInBytes),
+        //         BufferUsage.VertexBuffer));
         // _vertexBuffer = factory.CreateBuffer(
         //     new BufferDescription((uint)(_vertexCount * VertexPositionColor.SizeInBytes),
         //         BufferUsage.VertexBuffer));
@@ -160,22 +189,37 @@ public class RenderPipeline
         _cameraBuffer = factory.CreateBuffer(new BufferDescription(192, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
         
         _pointSettingsBuffer = factory.CreateBuffer(new BufferDescription(16, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+        
+        _paletteBuffer = factory.CreateBuffer(new BufferDescription((uint)(colorPalette.Count * 16), BufferUsage.UniformBuffer | BufferUsage.Dynamic));
     
         // graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
         // graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
         graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
         var pointData = new float[4] { _pointSize, 0f, 0f, 0f };
         graphicsDevice.UpdateBuffer(_pointSettingsBuffer, 0, pointData);
+        // graphicsDevice.UpdateBuffer(_paletteBuffer, 0, _colorPalette.Values.ToArray());
+        var arr = _colorPalette.Values.ToArray();
+        // Console.WriteLine(arr.Length);
+        // Console.WriteLine(arr[0]);
+        graphicsDevice.UpdateBuffer(_paletteBuffer, 0, _colorPalette.Values.Select(v => new Vector4(v,1f)).ToArray());
+
     
         // Create vertex layout
         // VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
         //     new VertexElementDescription("Position", VertexElementSemantic.Position, VertexElementFormat.Float3),
         //     new VertexElementDescription("Color", VertexElementSemantic.Color, VertexElementFormat.Float4));
+        // VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
+        //     new VertexElementDescription("Position", VertexElementSemantic.Position,
+        //         VertexElementFormat.Float3),
+        //     new VertexElementDescription("Normal", VertexElementSemantic.Normal, VertexElementFormat.Float3)
+        // );
         VertexLayoutDescription vertexLayout = new VertexLayoutDescription(
             new VertexElementDescription("Position", VertexElementSemantic.Position,
                 VertexElementFormat.Float3),
-            new VertexElementDescription("Normal", VertexElementSemantic.Normal, VertexElementFormat.Float3)
+            new VertexElementDescription("Normal", VertexElementSemantic.Normal, VertexElementFormat.Float3),
+            new VertexElementDescription("ColorId",VertexElementSemantic.Color, VertexElementFormat.UInt1)
         );
+
 
         _cameraLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
             new ResourceLayoutElementDescription("CameraBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)
@@ -192,6 +236,28 @@ public class RenderPipeline
         _timeLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(new ResourceLayoutElementDescription("TimeBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)));
 
         _timeSet = factory.CreateResourceSet(new ResourceSetDescription(_timeLayout, _timeBuffer));
+
+        _paletteLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
+            new ResourceLayoutElementDescription("PaletteBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)));
+        _paletteSet = factory.CreateResourceSet(new ResourceSetDescription(_paletteLayout, _paletteBuffer));
+        
+        _depthTexture = factory.CreateTexture(
+            TextureDescription.Texture2D(
+                (uint)_width,
+                (uint)_height,
+                mipLevels: 1,
+                arrayLayers: 1,
+                PixelFormat.D32_Float_S8_UInt,
+                TextureUsage.DepthStencil
+            )
+        );
+        
+        // _framebuffer = factory.CreateFramebuffer(
+        //     new FramebufferDescription(
+        //         _depthTexture,
+        //         graphicsDevice.SwapchainFramebuffer.ColorTargets[0].Target
+        //     )
+        // );
         
         // Load shaders
         ShaderDescription vertexShaderDesc = new ShaderDescription(
@@ -216,7 +282,7 @@ public class RenderPipeline
                 depthWriteEnabled: true,
                 comparisonKind: ComparisonKind.LessEqual),
             RasterizerState = new RasterizerStateDescription(
-                FaceCullMode.None,
+                FaceCullMode.Back,
                 PolygonFillMode.Solid,
                 FrontFace.Clockwise,
                 depthClipEnabled: true,
@@ -224,11 +290,13 @@ public class RenderPipeline
             // PrimitiveTopology = PrimitiveTopology.TriangleList,
             PrimitiveTopology = topology,
             // ResourceLayouts = Array.Empty<ResourceLayout>(),
-            ResourceLayouts = new[] { _cameraLayout, _pointSettingsLayout, _timeLayout },
+            ResourceLayouts = new[] { _cameraLayout, _pointSettingsLayout, _timeLayout, _paletteLayout },
             ShaderSet = new ShaderSetDescription(
                 new[] { vertexLayout },
                 _shaders),
             Outputs = graphicsDevice.SwapchainFramebuffer.OutputDescription
+            // Outputs = _framebuffer.OutputDescription
+
         };
     
         _pipeline = factory.CreateGraphicsPipeline(ref pipelineDescription);
@@ -358,11 +426,14 @@ public class RenderPipeline
     
     public void Draw(ref GraphicsDevice graphicsDevice)
     {
+        
+        
         _commandList.Begin();
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
+        // _commandList.SetFramebuffer(_framebuffer);
         
         _commandList.ClearColorTarget(0, RgbaFloat.Black);       // clear to black (or any color)
-        // _commandList.ClearDepthStencil(1f);                     // clear depth to 1.0 (max)
+        _commandList.ClearDepthStencil(1f);                     // clear depth to 1.0 (max)
         
         _commandList.SetPipeline(_pipeline);
         _commandList.SetVertexBuffer(0, _vertexBuffer);
@@ -370,6 +441,7 @@ public class RenderPipeline
         _commandList.SetGraphicsResourceSet(0, _cameraSet);
         _commandList.SetGraphicsResourceSet(1, _pointSettingsSet);
         _commandList.SetGraphicsResourceSet(2, _timeSet); 
+        _commandList.SetGraphicsResourceSet(3, _paletteSet);
         // _commandList.DrawIndexed(
         //     indexCount: (uint)_indexCount,
         //     instanceCount: 1,
@@ -389,8 +461,24 @@ public class RenderPipeline
             0,
             0);
         _commandList.End();
+        
+        
 
         graphicsDevice.SubmitCommands(_commandList);
+        graphicsDevice.SwapBuffers();
+    }
+
+    public void TestDraw(ref GraphicsDevice graphicsDevice)
+    {
+        _commandList.Begin();
+
+        _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
+        _commandList.ClearColorTarget(0, RgbaFloat.Black);
+
+        _commandList.End();
+        graphicsDevice.SubmitCommands(_commandList);
+
+        graphicsDevice.WaitForIdle(); 
         graphicsDevice.SwapBuffers();
     }
     
@@ -423,6 +511,22 @@ public class RenderPipeline
         public const uint SizeInBytes = 24;
     }
     
+    struct VertexPositionNormalColor
+    {
+        public Vector3 Position;
+        public Vector3 Normal;
+        public int ColorId;
+
+        public VertexPositionNormalColor(Vector3 pos, Vector3 normal, int colorId)
+        {
+            Position = pos;
+            Normal = normal;
+            ColorId = colorId;
+        }
+
+        public const uint SizeInBytes = 24+sizeof(int);
+    }
+    
     struct TimeData
     {
         public float uTime;
@@ -450,36 +554,35 @@ public class RenderPipeline
         // Console.WriteLine(_time);
     }
 
-    public void UpdateCamera(ref GraphicsDevice graphicsDevice, Vector3 movement)
+    public void UpdateCamera(ref GraphicsDevice graphicsDevice, Vector3 movement, Vector3 rotationInput, float deltaTime)
     {
-        Console.WriteLine($"camera pos before: {_cameraPosition.X}, {_cameraPosition.Y}, {_cameraPosition.Z}");
-        Console.WriteLine($"lookat pos before: {_cameraTarget.X}, {_cameraTarget.Y}, {_cameraTarget.Z}");
-
-        // Vector3 _cameraForward = new Vector3(0, 0, -1);
-        Vector3 right = Vector3.Normalize(Vector3.Cross(_cameraForward, Vector3.UnitY));
-
+        var rotationSpeed = 5f;
+       
+        
+        _cameraRotation += rotationInput * deltaTime * rotationSpeed;
+        
+        //model Matrix
+        _cameraMatrices[0] = Matrix4x4.Identity;
+        //view Matrix
+        var rotation = Matrix4x4.CreateRotationX(_cameraRotation.X) * 
+                       Matrix4x4.CreateRotationY(_cameraRotation.Y)  * 
+                       Matrix4x4.CreateRotationZ(_cameraRotation.Z);
+        var forward =Vector3.Normalize(Vector3.Transform(Vector3.UnitZ, rotation));
+        
+        var right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitY));
+        
         _cameraPosition += 
-            movement.Z * _cameraForward +
-            movement.X * right +
-            movement.Y * Vector3.UnitY;
-        
-        // _cameraTarget = _cameraPosition + _cameraForward;
-        
-        Console.WriteLine($"camera pos after: {_cameraPosition.X}, {_cameraPosition.Y}, {_cameraPosition.Z}");
-        Console.WriteLine($"lookat pos after: {_cameraTarget.X}, {_cameraTarget.Y}, {_cameraTarget.Z}");
-
-
-
-        _cameraMatrices[1] = Matrix4x4.CreateLookAt(
-            _cameraPosition,
-            _cameraTarget,
-            Vector3.UnitY
-        );
+            movement.Z * forward +
+            movement.X * -right +
+            movement.Y * Vector3.UnitY; 
+     
+        // var target = new Vector3(0, 1, 0);
+        var target = _cameraPosition + forward;
+        _cameraMatrices[1] = Matrix4x4.CreateLookAt(_cameraPosition, target, Vector3.UnitY);
         
         //projection Matrix with 60deg fov
-        _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, (float)_width/_height, 0.1f, 10000);
-        
-        graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
+        _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 10000);
+        graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices.ToArray());
     }
 
     public void DisposeResources()
@@ -488,6 +591,11 @@ public class RenderPipeline
         _commandList.Dispose();
         // _vertexBuffer.Dispose();
         // _indexBuffer.Dispose();
+    }
+
+    public Vector3 getCameraPosition()
+    {
+        return _cameraPosition;
     }
 
     struct TimeUniform
