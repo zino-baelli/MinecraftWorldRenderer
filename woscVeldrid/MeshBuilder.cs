@@ -65,7 +65,12 @@ public static class MeshBuilder
                     var neighbor = GetNeighbor(sectionDict, section.Y, x, y, z, face);
                     if (!IsAir(neighbor)) continue;
 
-                    AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face, idDict[block.Name]);
+                    var blockId = 0;
+                    if (idDict.TryGetValue(block.Name, out var id))
+                    {
+                        blockId = id;
+                    }
+                    AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face, blockId);
                 }
             }
         }
@@ -118,9 +123,15 @@ public static class MeshBuilder
     {
         uint startIndex = (uint)mesh.Vertices.Count;
 
+        // float worldX = chunkX * 16 + x;
+        // float worldY = sectionY * 16 + y;
+        // float worldZ = chunkZ * 16 + z;
+        
         float worldX = chunkX * 16 + x;
         float worldY = sectionY * 16 + y;
         float worldZ = chunkZ * 16 + z;
+        
+        // float worldZ = -(chunkZ * 16 + z);
 
         for (int i = 0; i < 4; i++)
         {

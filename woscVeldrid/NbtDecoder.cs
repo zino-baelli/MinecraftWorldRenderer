@@ -58,7 +58,10 @@ public class NbtDecoder
 
         var blockStates = section.Get<NbtLongArray>("BlockStates").Value;
 
+        // int bitsPerBlock = Math.Max(4, (int)Math.Ceiling(Math.Log2(palette.Count)));
         int bitsPerBlock = Math.Max(4, (int)Math.Ceiling(Math.Log2(palette.Count)));
+        if ((1 << bitsPerBlock) < palette.Count)
+            bitsPerBlock++;
 
         var chunkSection = new ChunkSection { Y = sectionY };
 
@@ -70,14 +73,26 @@ public class NbtDecoder
             {
                 block = palette[paletteIndex];
             }
+            
+            // if (paletteIndex >= palette.Count)
+            // {
+            //     Console.WriteLine($"Invalid palette index {paletteIndex} at {i}");
+            // }
+            //
 
-            int x = i % 16;
-            int z = (i / 16) % 16;
-            int y = i / 256;
+            // int x = i % 16;
+            // int z = (i / 16) % 16;
+            // int y = i / 256;
+            int x = i & 15;
+            int z = (i >> 4) & 15;
+            int y = (i >> 8) & 15;
 
             chunkSection.Blocks[x, y, z] = block;
+
             // blockTypes.Add(block.Name);
         }
+        
+        // Console.WriteLine($"palette.Count={palette.Count}, bitsPerBlock={bitsPerBlock}, longs={blockStates.Length}");
 
         return chunkSection;
     }
@@ -109,32 +124,48 @@ public class NbtDecoder
         return palette;
     }
     
+    // private static int ExtractIndex(long[] data, int index, int bitsPerBlock)
+    // {
+    //     int bitIndex = index * bitsPerBlock;
+    //
+    //     int longIndex = bitIndex / 64;
+    //     int startBit = bitIndex % 64;
+    //
+    //     ulong current = (ulong)data[longIndex];
+    //
+    //     if (startBit + bitsPerBlock <= 64)
+    //     {
+    //         ulong mask = (1UL << bitsPerBlock) - 1;
+    //         return (int)((current >> startBit) & mask);
+    //     }
+    //     else
+    //     {
+    //         ulong next = (ulong)data[longIndex + 1];
+    //
+    //         int bitsInCurrent = 64 - startBit;
+    //         int bitsInNext = bitsPerBlock - bitsInCurrent;
+    //
+    //         ulong part1 = current >> startBit;
+    //         ulong part2 = next & ((1UL << bitsInNext) - 1);
+    //
+    //         return (int)((part2 << bitsInCurrent) | part1);
+    //     }
+    // }
+    
     private static int ExtractIndex(long[] data, int index, int bitsPerBlock)
     {
-        int bitIndex = index * bitsPerBlock;
+        int valuesPerLong = 64 / bitsPerBlock;
 
-        int longIndex = bitIndex / 64;
-        int startBit = bitIndex % 64;
+        int longIndex = index / valuesPerLong;
+        int indexInLong = index % valuesPerLong;
 
-        ulong current = (ulong)data[longIndex];
+        int bitOffset = indexInLong * bitsPerBlock;
 
-        if (startBit + bitsPerBlock <= 64)
-        {
-            ulong mask = (1UL << bitsPerBlock) - 1;
-            return (int)((current >> startBit) & mask);
-        }
-        else
-        {
-            ulong next = (ulong)data[longIndex + 1];
+        ulong value = (ulong)data[longIndex];
 
-            int bitsInCurrent = 64 - startBit;
-            int bitsInNext = bitsPerBlock - bitsInCurrent;
+        ulong mask = (1UL << bitsPerBlock) - 1;
 
-            ulong part1 = current >> startBit;
-            ulong part2 = next & ((1UL << bitsInNext) - 1);
-
-            return (int)((part2 << bitsInCurrent) | part1);
-        }
+        return (int)((value >> bitOffset) & mask);
     }
     
     private static ChunkSection CreateEmptySection(int y)

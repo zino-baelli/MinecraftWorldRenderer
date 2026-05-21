@@ -134,6 +134,7 @@ public class RenderPipeline
         //     baseIndex += 3;
         // }
         var idx = 0;
+        // foreach (var mesh in meshes.TakeLast(140).Take(1))
         foreach (var mesh in meshes)
         {
             idx = 0;

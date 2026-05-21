@@ -9,7 +9,7 @@ var path = "../../../TestData/r.12.3.mca";
 string[] files = Directory.GetFiles(@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region", "*.mca", SearchOption.TopDirectoryOnly);
 
 var chunkAmount = files.Length * 1024;
-var fileRenderAmount = 1;
+var fileRenderAmount = 20;
 
 HashSet<string> blockTypeSet = new HashSet<string>();
 var blockNameId = Helper.GetBlockToIdFromFile("../../../TestData/blockPaletteComplete.csv");
@@ -18,6 +18,7 @@ var blockPalette = Helper.GetColorPaletteFromFile("../../../TestData/blockPalett
 
 // Chunk[] data = new Chunk[1024]; //amount of chunks per .mca file are 32X32
 List<Chunk> data = new List<Chunk>();
+Dictionary<(int x, int z), Chunk> chunks =  new Dictionary<(int x, int z), Chunk>();
 
 //
 // byte[] chunkData = null;
@@ -62,6 +63,7 @@ List<Chunk> data = new List<Chunk>();
 for (int j = 0; j < fileRenderAmount; j++)
 {
     path = files[j];
+    Console.WriteLine($"Loading file: {path}");
     byte[] chunkData = null;
     int foundX = -1, foundZ = -1;
 
@@ -84,8 +86,18 @@ for (int j = 0; j < fileRenderAmount; j++)
                 foundZ = z;
                 // Console.WriteLine($"Using chunk {x},{z}");
                 var nbtData = NbtParser.LoadChunkNBT(chunkData);
-                data.Add(NbtDecoder.DecodeChunk(nbtData/*, out HashSet<string> blockTypes*/));
+                // data.Add(NbtDecoder.DecodeChunk(nbtData/*, out HashSet<string> blockTypes*/));
+                var chunk = NbtDecoder.DecodeChunk(nbtData);
+                chunks[(chunk.X, chunk.Z)] = chunk;
+                
+                data.Add(chunk);
                 chunkCounter++;
+                
+                // if (chunk.X != x || chunk.Z != z)
+                // {
+                //     Console.WriteLine($"Mismatch: file({x},{z}) nbt({chunk.X},{chunk.Z})");
+                // }
+                
                 // foreach (var blockType in blockTypes)
                 // {
                 //     blockTypeSet.Add(blockType);
@@ -120,16 +132,30 @@ Console.WriteLine("All chunks read from files");
 //
 // var meshes = new Mesh[data.Length];
 // for (int j = 0; j < data.Length; j++)
-var meshes = new Mesh[data.Count];
-Console.WriteLine("Total meshes: " + meshes.Length);
-for (int j = 0; j < data.Count; j++)
+
+
+// var meshes = new Mesh[data.Count];
+// Console.WriteLine("Total meshes: " + meshes.Length);
+// for (int j = 0; j < data.Count; j++)
+// {
+//     meshes[j] = MeshBuilder.BuildMesh(data[j], blockNameId);
+//     // Console.WriteLine($"Mesh {j} built");
+// }
+
+var meshes = new List<Mesh>();
+Console.WriteLine("Total meshes: " + meshes.Count);
+foreach (var kv in chunks)
 {
-    meshes[j] = MeshBuilder.BuildMesh(data[j], blockNameId);
-    // Console.WriteLine($"Mesh {j} built");
+    meshes.Add(MeshBuilder.BuildMesh(kv.Value, blockNameId));
 }
+
+//todo write mesh 883 to file
+//compare with nbt data for chunk 883
+// File.WriteAllText("../../../TestData/mesh883.txt",meshes[883].ToString());
+// File.WriteAllText("../../../TestData/nbtData883.csv", data[883].toCsv());
 Console.WriteLine("All meshes built");
 // windowRenderer.BlockIds = blockNameId;
 windowRenderer.ColorPalette = blockPalette;
-windowRenderer.Render(meshes);
+windowRenderer.Render(meshes.ToArray());
 
 var i = 1;

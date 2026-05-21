@@ -43,4 +43,11 @@ public class Chunk
         
         return builder.ToString();
     }
+
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        
+        return base.ToString();
+    }
 }

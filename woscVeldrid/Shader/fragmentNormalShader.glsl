@@ -24,7 +24,7 @@ void main()
 
 
     outColor = vec4(finalColor, 1.0);
-    //outColor = fsColor;
+    outColor = fsColor * lighting;
 
     //float depth = gl_FragCoord.z;
     //outColor = vec4(vec3(depth), 1.0);
