@@ -37,14 +37,17 @@ public static class MeshBuilder
         new[] { new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(0,1,0), new Vector3(0,0,0) }
     };
 
-    private static readonly Vector2[] UVs =
-    {
-        new(0,0), new(0,1), new(1,1), new(1,0)
-    };
+    // private static readonly Vector2[] UVs =
+    // {
+    //     new(0,0), new(0,1), new(1,1), new(1,0)
+    // };
 
     public static Mesh BuildMesh(Chunk chunk, Dictionary<string,int> idDict)
     {
         var mesh = new Mesh();
+        List<Vertex> vertices = new(25000);
+        List<uint> indices = new(35000);
+        List<int> colorIds = new(25000);
 
         // Build quick lookup by section Y
         var sectionDict = new Dictionary<int, ChunkSection>();
@@ -70,11 +73,15 @@ public static class MeshBuilder
                     {
                         blockId = id;
                     }
-                    AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face, blockId);
+                    // AddFace(mesh, chunk.X, chunk.Z, section.Y, x, y, z, face, blockId);
+                    AddFace( vertices, indices, colorIds, chunk.X, chunk.Z, section.Y, x, y, z, face, blockId);
+
                 }
             }
         }
-
+        mesh.Vertices = vertices.ToArray();
+        mesh.Indices = indices.ToArray();
+        mesh.ColorIds = colorIds.ToArray();
         return mesh;
     }
 
@@ -119,9 +126,13 @@ public static class MeshBuilder
         return section.Blocks[nx, ny, nz];
     }
 
-    private static void AddFace(Mesh mesh, int chunkX, int chunkZ, int sectionY, int x, int y, int z, int face, int colorId)
+    // private static void AddFace(Mesh mesh, int chunkX, int chunkZ, int sectionY, int x, int y, int z, int face, int colorId)
+    private static void AddFace(List<Vertex> vertices,List<uint> indices,List<int> colorIds, int chunkX, int chunkZ, int sectionY, int x, int y, int z, int face, int colorId)
+
     {
-        uint startIndex = (uint)mesh.Vertices.Count;
+        // uint startIndex = (uint)mesh.Vertices.Count;
+        uint startIndex = (uint)vertices.Count;
+
 
         // float worldX = chunkX * 16 + x;
         // float worldY = sectionY * 16 + y;
@@ -138,21 +149,31 @@ public static class MeshBuilder
             var pos = FaceVertices[face][i];
             var vertex = new Vertex(
                 new Vector3(worldX, worldY, worldZ) + pos,
-                FaceNormals[face],
-                UVs[i]
+                FaceNormals[face]
+                // ,UVs[i]
             );
 
-            mesh.Vertices.Add(vertex);
-            mesh.colorIds.Add(colorId);
+            // mesh.Vertices.Add(vertex);
+            // mesh.ColorIds.Add(colorId);
+           vertices.Add(vertex);
+           colorIds.Add(colorId);
         }
 
         // two triangles
-        mesh.Indices.Add(startIndex + 0);
-        mesh.Indices.Add(startIndex + 1);
-        mesh.Indices.Add(startIndex + 2);
-
-        mesh.Indices.Add(startIndex + 0);
-        mesh.Indices.Add(startIndex + 2);
-        mesh.Indices.Add(startIndex + 3);
+        // mesh.Indices.Add(startIndex + 0);
+        // mesh.Indices.Add(startIndex + 1);
+        // mesh.Indices.Add(startIndex + 2);
+        //
+        // mesh.Indices.Add(startIndex + 0);
+        // mesh.Indices.Add(startIndex + 2);
+        // mesh.Indices.Add(startIndex + 3);
+        
+        indices.Add(startIndex + 0);
+        indices.Add(startIndex + 1);
+        indices.Add(startIndex + 2);
+        
+        indices.Add(startIndex + 0);
+        indices.Add(startIndex + 2);
+        indices.Add(startIndex + 3);
     }
 }

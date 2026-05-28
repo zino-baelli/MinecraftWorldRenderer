@@ -5,6 +5,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,5 +18,14 @@
       <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" />
       <PackageReference Include="Veldrid.StartupUtilities" Version="4.9.0" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="dll\" />
+    </ItemGroup>
+    
+    <Target Name="CopyNativeDLL" AfterTargets="Build">
+        <Copy SourceFiles="C:\Users\zino\RiderProjects\woscVeldrid\woscVeldrid\dll\meshopt.dll"
+              DestinationFolder="$(OutDir)" />
+    </Target>
 
 </Project>

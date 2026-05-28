@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace woscVeldrid;
@@ -50,5 +51,21 @@ public class Helper
             }
         }
         return palette;
+    }
+    
+    
+
+    public static float[] Flatten(Vector3[] v)
+    {
+        float[] result = new float[v.Length * 3];
+
+        for (int i = 0; i < v.Length; i++)
+        {
+            result[i * 3 + 0] = v[i].X;
+            result[i * 3 + 1] = v[i].Y;
+            result[i * 3 + 2] = v[i].Z;
+        }
+
+        return result;
     }
 }

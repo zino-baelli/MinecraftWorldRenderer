@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
 using ImGuiNET;
 
 namespace woscVeldrid;
@@ -93,7 +94,17 @@ public class AppWindow
         
         _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, meshes, ColorPalette);
 
-        
+        // var uploadQueue = new Queue<Mesh>(meshes);
+        ConcurrentQueue<Mesh> readyMeshes = new();
+
+        Task.Run(() =>
+        {
+            foreach (var mesh in meshes)
+            {
+                // heavy CPU work
+                readyMeshes.Enqueue(mesh);
+            }
+        });
       
         _window.KeyDown += (keyEvent) =>
         {
@@ -122,6 +133,8 @@ public class AppWindow
         _window.KeyUp += e => _keysDown.Remove(e.Key);
 
         var drawOnce = 0;
+        // int uploadsPerFrame = 1;
+
         
         while (_window.Exists)
         {
@@ -138,7 +151,22 @@ public class AppWindow
             }
 
             
-           
+            // for (int i = 0; i < 2 && uploadQueue.Count > 0; i++)
+            // {
+            //     var mesh = uploadQueue.Dequeue();
+            //     _renderPipeline.UploadMesh(_graphicsDevice, mesh);
+            // }
+            
+            // for (int i = 0; i < uploadsPerFrame; i++)
+            // {
+            //     if (readyMeshes.TryDequeue(out var mesh))
+            //     {
+            //         _renderPipeline.UploadMesh(_graphicsDevice, mesh);
+            //         mesh.Vertices = null;
+            //         mesh.Indices = null;
+            //         mesh.colorIds = null;
+            //     }
+            // }
 
             
             double now = stopwatch.Elapsed.TotalSeconds;
@@ -192,7 +220,7 @@ public class AppWindow
             {
                 _renderPipeline.Draw(ref _graphicsDevice);
                 // _renderPipeline.TestDraw(ref _graphicsDevice);
-                drawOnce++;
+                // drawOnce++;
             }
              
            

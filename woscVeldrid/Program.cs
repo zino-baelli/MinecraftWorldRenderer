@@ -1,4 +1,5 @@
-﻿using woscVeldrid;
+﻿using Meshoptimizer;
+using woscVeldrid;
 using woscVeldrid.Shader;
 
 var windowRenderer = new AppWindow(1920, 1080, "WoSc");
@@ -9,7 +10,7 @@ var path = "../../../TestData/r.12.3.mca";
 string[] files = Directory.GetFiles(@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region", "*.mca", SearchOption.TopDirectoryOnly);
 
 var chunkAmount = files.Length * 1024;
-var fileRenderAmount = 20;
+var fileRenderAmount = 1;
 
 HashSet<string> blockTypeSet = new HashSet<string>();
 var blockNameId = Helper.GetBlockToIdFromFile("../../../TestData/blockPaletteComplete.csv");
@@ -63,7 +64,7 @@ Dictionary<(int x, int z), Chunk> chunks =  new Dictionary<(int x, int z), Chunk
 for (int j = 0; j < fileRenderAmount; j++)
 {
     path = files[j];
-    Console.WriteLine($"Loading file: {path}");
+    // Console.WriteLine($"Loading file: {path}");
     byte[] chunkData = null;
     int foundX = -1, foundZ = -1;
 
@@ -142,12 +143,31 @@ Console.WriteLine("All chunks read from files");
 //     // Console.WriteLine($"Mesh {j} built");
 // }
 
+Console.WriteLine("Start building meshes");
 var meshes = new List<Mesh>();
-Console.WriteLine("Total meshes: " + meshes.Count);
 foreach (var kv in chunks)
 {
     meshes.Add(MeshBuilder.BuildMesh(kv.Value, blockNameId));
 }
+Console.WriteLine("Total meshes: " + meshes.Count);
+
+//todo change lod creation
+var lods = new Mesh[meshes.Count];
+var index = 0;
+foreach (var mesh in meshes)
+{
+    // lods[index] = mesh.GenerateLOD(0.5f);
+    mesh.Weld();
+    // mesh.Simplify(0.01f,1e-2f);
+    // mesh.Simplify(0.5f,1f);
+    mesh.SimplifySloppy(0.3f,0.5f);
+
+
+    index++;
+}
+
+// meshes = null;
+
 
 //todo write mesh 883 to file
 //compare with nbt data for chunk 883
@@ -157,5 +177,7 @@ Console.WriteLine("All meshes built");
 // windowRenderer.BlockIds = blockNameId;
 windowRenderer.ColorPalette = blockPalette;
 windowRenderer.Render(meshes.ToArray());
+// windowRenderer.Render(lods.ToArray());
+
 
 var i = 1;

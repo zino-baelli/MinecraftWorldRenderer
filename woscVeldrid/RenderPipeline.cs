@@ -52,6 +52,7 @@ public class RenderPipeline
     private Vector3 _cameraTarget;
     private float _time;
     private Dictionary<int, Vector3> _colorPalette;
+    private List<GpuMesh> _gpuMeshes = new();
 
     
     public RenderPipeline(string vertexCode, string fragmentCode, int width, int height)
@@ -135,6 +136,7 @@ public class RenderPipeline
         // }
         var idx = 0;
         // foreach (var mesh in meshes.TakeLast(140).Take(1))
+        Console.WriteLine("Start building vertex and index buffers");
         foreach (var mesh in meshes)
         {
             idx = 0;
@@ -142,9 +144,9 @@ public class RenderPipeline
             {
                 // vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
                 // vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
-                vertices.Add(new VertexPositionNormalColor(vertex.Position, vertex.Normal, mesh.colorIds[idx]));
+                vertices.Add(new VertexPositionNormalColor(vertex.Position, vertex.Normal, mesh.ColorIds[idx]));
                 idx++;
-
+        
             }
             
             foreach (var meshIndex in mesh.Indices)
@@ -152,11 +154,13 @@ public class RenderPipeline
                 // indices.Add((uint)(baseIndex+meshIndex));
                 indices.Add(baseIndex+meshIndex);
             }
-            baseIndex += (uint)mesh.Vertices.Count;
+            baseIndex += (uint)mesh.Vertices.Length;
+            // baseIndex += (uint)mesh.Vertices.Count;
+
         }
 
      
-      
+        Console.WriteLine("Finish building  vertex and index buffers");
         
         _indexCount = indices.Count;
         _vertexCount = vertices.Count;
@@ -401,28 +405,45 @@ public class RenderPipeline
     
     
 
-    // private void UpdateCameraMatrices(Pointcloud pointcloud, ref GraphicsDevice graphicsDevice)
-    // {
-    //     //model Matrix
-    //     _cameraMatrices[0] = Matrix4x4.Identity;
-    //     Console.WriteLine(_pointConfig.CameraRotationX);
-    //     //view Matrix
-    //     var rotation = Matrix4x4.CreateRotationX(_pointConfig.CameraRotationX) * 
-    //                    Matrix4x4.CreateRotationY(_pointConfig.CameraRotationY)  * 
-    //                    Matrix4x4.CreateRotationZ(_pointConfig.CameraRotationZ);
-    //     var forward =Vector3.Normalize(Vector3.Transform(Vector3.UnitZ, rotation));
-    //  
-    //     // var target = new Vector3(0, 1, 0);
-    //     var target = _pointConfig.GetCameraPosition() + forward;
-    //     _cameraMatrices[1] = Matrix4x4.CreateLookAt(_pointConfig.GetCameraPosition(), target, Vector3.UnitY);
-    //     
-    //     //projection Matrix with 60deg fov
-    //     _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, pointcloud.farthestPoint);
-    //     graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices.ToArray());
-    //
-    // }
-    
+    public void UploadMesh(GraphicsDevice gd, Mesh mesh)
+    {
+        var factory = gd.ResourceFactory;
 
+        var vertices = new VertexPositionNormalColor[mesh.Vertices.Length];
+        // var vertices = new VertexPositionNormalColor[mesh.Vertices.Count];
+
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            var v = mesh.Vertices[i];
+            vertices[i] = new VertexPositionNormalColor(
+                v.Position,
+                v.Normal,
+                mesh.ColorIds[i]);
+        }
+
+        var indices = mesh.Indices.ToArray();
+
+        var vb = factory.CreateBuffer(new BufferDescription(
+            (uint)(vertices.Length * VertexPositionNormalColor.SizeInBytes),
+            BufferUsage.VertexBuffer));
+
+        var ib = factory.CreateBuffer(new BufferDescription(
+            (uint)(indices.Length * sizeof(uint)),
+            BufferUsage.IndexBuffer));
+
+        gd.UpdateBuffer(vb, 0, vertices);
+        gd.UpdateBuffer(ib, 0, indices);
+
+        _gpuMeshes.Add(new GpuMesh
+        {
+            VertexBuffer = vb,
+            IndexBuffer = ib,
+            IndexCount = (uint)indices.Length
+        });
+    }
+    
+    
     
     
     public void Draw(ref GraphicsDevice graphicsDevice)
@@ -449,12 +470,20 @@ public class RenderPipeline
         //     indexStart: 0,
         //     vertexOffset: 0,
         //     instanceStart: 0);
-        // _commandList.Draw(
-        //     vertexCount: (uint)_vertexCount,
-        //     instanceCount: 1,
-        //     vertexStart: 0,
-        //     instanceStart: 0
-        // );
+  
+        
+        // foreach (var mesh in _gpuMeshes)
+        // {
+        //     _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
+        //     _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
+        //
+        //     _commandList.DrawIndexed(
+        //         mesh.IndexCount,
+        //         1,
+        //         0,
+        //         0,
+        //         0);
+        // }
         _commandList.DrawIndexed(
             (uint)_indexCount,
             1,
@@ -588,10 +617,14 @@ public class RenderPipeline
 
     public void DisposeResources()
     {
+        foreach (var m in _gpuMeshes)
+        {
+            m.VertexBuffer.Dispose();
+            m.IndexBuffer.Dispose();
+        } 
+        
         _pipeline.Dispose();
         _commandList.Dispose();
-        // _vertexBuffer.Dispose();
-        // _indexBuffer.Dispose();
     }
 
     public Vector3 getCameraPosition()
