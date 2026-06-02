@@ -66,7 +66,7 @@ public class RenderPipeline
     public void CreateResources(
         ref GraphicsDevice graphicsDevice,
         PrimitiveTopology topology,
-        Mesh[] meshes,
+        // Mesh[] meshes,
         Dictionary<int,  Vector3> colorPalette
         )
     {
@@ -110,8 +110,8 @@ public class RenderPipeline
         //projection Matrix with 60deg fov
         _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 1000);
         
-        uint baseIndex = 0;
-        var colorIndex = 0;
+        // uint baseIndex = 0;
+        // var colorIndex = 0;
         
         // foreach (var p in depthPoints)
         // var p = new Vector3(0, 1, 0);
@@ -134,55 +134,55 @@ public class RenderPipeline
         //
         //     baseIndex += 3;
         // }
-        var idx = 0;
+        // var idx = 0;
         // foreach (var mesh in meshes.TakeLast(140).Take(1))
-        Console.WriteLine("Start building vertex and index buffers");
-        foreach (var mesh in meshes)
-        {
-            idx = 0;
-            foreach (var vertex in mesh.Vertices)
-            {
-                // vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
-                // vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
-                vertices.Add(new VertexPositionNormalColor(vertex.Position, vertex.Normal, mesh.ColorIds[idx]));
-                idx++;
-        
-            }
-            
-            foreach (var meshIndex in mesh.Indices)
-            {
-                // indices.Add((uint)(baseIndex+meshIndex));
-                indices.Add(baseIndex+meshIndex);
-            }
-            baseIndex += (uint)mesh.Vertices.Length;
-            // baseIndex += (uint)mesh.Vertices.Count;
-
-        }
-
-     
-        Console.WriteLine("Finish building  vertex and index buffers");
-        
-        _indexCount = indices.Count;
-        _vertexCount = vertices.Count;
-    
-        // Create buffers
-        _vertexBuffer = factory.CreateBuffer(
-            new BufferDescription((uint)(_vertexCount * VertexPositionNormalColor.SizeInBytes),
-                BufferUsage.VertexBuffer));
+        // Console.WriteLine("Start building vertex and index buffers");
+        // foreach (var mesh in meshes)
+        // {
+        //     idx = 0;
+        //     foreach (var vertex in mesh.Vertices)
+        //     {
+        //         // vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
+        //         // vertices.Add(new VertexPositionNormal(vertex.Position, vertex.Normal));
+        //         vertices.Add(new VertexPositionNormalColor(vertex.Position, vertex.Normal, mesh.ColorIds[idx]));
+        //         idx++;
+        //
+        //     }
+        //     
+        //     foreach (var meshIndex in mesh.Indices)
+        //     {
+        //         // indices.Add((uint)(baseIndex+meshIndex));
+        //         indices.Add(baseIndex+meshIndex);
+        //     }
+        //     baseIndex += (uint)mesh.Vertices.Length;
+        //     // baseIndex += (uint)mesh.Vertices.Count;
+        //
+        // }
+        //
+        //
+        // Console.WriteLine("Finish building  vertex and index buffers");
+        //
+        // _indexCount = indices.Count;
+        // _vertexCount = vertices.Count;
+        //
+        // // Create buffers
         // _vertexBuffer = factory.CreateBuffer(
-        //     new BufferDescription((uint)(_vertexCount * VertexPositionNormal.SizeInBytes),
+        //     new BufferDescription((uint)(_vertexCount * VertexPositionNormalColor.SizeInBytes),
         //         BufferUsage.VertexBuffer));
-        // _vertexBuffer = factory.CreateBuffer(
-        //     new BufferDescription((uint)(_vertexCount * VertexPositionColor.SizeInBytes),
-        //         BufferUsage.VertexBuffer));
-
-        _indexBuffer = factory.CreateBuffer(
-            new BufferDescription(
-                (uint)(_indexCount * sizeof(uint)),
-                BufferUsage.IndexBuffer));
-        
-        graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
-        graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
+        // // _vertexBuffer = factory.CreateBuffer(
+        // //     new BufferDescription((uint)(_vertexCount * VertexPositionNormal.SizeInBytes),
+        // //         BufferUsage.VertexBuffer));
+        // // _vertexBuffer = factory.CreateBuffer(
+        // //     new BufferDescription((uint)(_vertexCount * VertexPositionColor.SizeInBytes),
+        // //         BufferUsage.VertexBuffer));
+        //
+        // _indexBuffer = factory.CreateBuffer(
+        //     new BufferDescription(
+        //         (uint)(_indexCount * sizeof(uint)),
+        //         BufferUsage.IndexBuffer));
+        //
+        // graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
+        // graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
 
         // _colorBuffer = factory.CreateBuffer(
         //     new BufferDescription((uint)(_width * _height * sizeof(float) * 3),
@@ -308,57 +308,6 @@ public class RenderPipeline
     
         _commandList = factory.CreateCommandList();
     }
-
-    public void UpdateMap(ref GraphicsDevice graphicsDevice, Mesh mesh)
-    {
-        var vertices = new List<VertexPositionColor>();
-        var indices = new List<uint>();
-        
-        //for testing
-        var baseIndex = 0;
-        var p = new Vector3(0, 1, 0);
-        {
-            // Build a small triangle at the point
-            Vector3 v0 = new Vector3(p.X, p.Y + _triSize, p.Z);
-            Vector3 v1 = new Vector3(p.X - _triSize, p.Y - _triSize, p.Z);
-            Vector3 v2 = new Vector3(p.X + _triSize, p.Y - _triSize, p.Z);
-            
-          
-            var color = RgbaFloat.White;
-
-            // var colorData = pointcloud.colors[colorIndex];
-
-            // color = new RgbaFloat(colorData.X,  colorData.Y, colorData.Z, 1) ; 
-            
-            vertices.Add(new VertexPositionColor(v0, color));
-            vertices.Add(new VertexPositionColor(v1, color));
-            vertices.Add(new VertexPositionColor(v2, color));
-            
-            indices.Add((uint)(baseIndex + 0));
-            indices.Add((uint)(baseIndex + 1));
-            indices.Add((uint)(baseIndex + 2));
-            
-            // baseIndex += 3;
-            
-        }
-        
-        var colorIndex = 0;
-        foreach (var vertex in mesh.Vertices)
-        {
-            vertices.Add(new VertexPositionColor(vertex.Position, RgbaFloat.White));
-        }
-        
-        foreach (var meshIndex in mesh.Indices)
-        {
-            // indices.Add((uint)(baseIndex+meshIndex));
-            indices.Add(meshIndex);
-        }
-        
-        _vertexCount = vertices.Count;
-        
-        graphicsDevice.UpdateBuffer(_vertexBuffer, 0, vertices.ToArray());
-        graphicsDevice.UpdateBuffer(_indexBuffer, 0, indices.ToArray());
-    }
     
     public void Update( ref GraphicsDevice graphicsDevice)
     {
@@ -441,6 +390,42 @@ public class RenderPipeline
             IndexBuffer = ib,
             IndexCount = (uint)indices.Length
         });
+    }
+    
+    public GpuMesh UploadMeshStreamed(GraphicsDevice gd, Mesh mesh)
+    {
+        var factory = gd.ResourceFactory;
+
+        var vertices = new VertexPositionNormalColor[mesh.Vertices.Length];
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            var v = mesh.Vertices[i];
+            vertices[i] = new VertexPositionNormalColor(
+                v.Position,
+                v.Normal,
+                mesh.ColorIds[i]);
+        }
+
+        var indices = mesh.Indices;
+
+        var vb = factory.CreateBuffer(new BufferDescription(
+            (uint)(vertices.Length * VertexPositionNormalColor.SizeInBytes),
+            BufferUsage.VertexBuffer));
+
+        var ib = factory.CreateBuffer(new BufferDescription(
+            (uint)(indices.Length * sizeof(uint)),
+            BufferUsage.IndexBuffer));
+
+        gd.UpdateBuffer(vb, 0, vertices);
+        gd.UpdateBuffer(ib, 0, indices);
+
+        return new GpuMesh
+        {
+            VertexBuffer = vb,
+            IndexBuffer = ib,
+            IndexCount = (uint)indices.Length
+        };
     }
     
     

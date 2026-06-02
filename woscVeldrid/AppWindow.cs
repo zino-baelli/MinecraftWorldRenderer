@@ -92,7 +92,7 @@ public class AppWindow
   
         
         
-        _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, meshes, ColorPalette);
+        // _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, meshes, ColorPalette);
 
         // var uploadQueue = new Queue<Mesh>(meshes);
         ConcurrentQueue<Mesh> readyMeshes = new();
@@ -265,6 +265,14 @@ public class AppWindow
             SyncToVerticalBlank = true,
             ResourceBindingModel = ResourceBindingModel.Improved
         };
+
+        var meshReader = new MeshIOCompressed();
+        
+        var chunkManager = new ChunkStreamingManager(
+            _graphicsDevice,
+            _renderPipeline,
+            meshReader,
+            meshLocation);
         
         RenderDoc rd;
         if (RenderDoc.Load(out rd))
@@ -288,15 +296,7 @@ public class AppWindow
 
         // var uploadQueue = new Queue<Mesh>(meshes);
         ConcurrentQueue<Mesh> readyMeshes = new();
-
-        Task.Run(() =>
-        {
-            foreach (var mesh in meshes)
-            {
-                // heavy CPU work
-                readyMeshes.Enqueue(mesh);
-            }
-        });
+        
       
         _window.KeyDown += (keyEvent) =>
         {
@@ -325,7 +325,6 @@ public class AppWindow
         _window.KeyUp += e => _keysDown.Remove(e.Key);
 
         var drawOnce = 0;
-        // int uploadsPerFrame = 1;
 
         
         while (_window.Exists)
@@ -341,24 +340,6 @@ public class AppWindow
                 rd.TriggerCapture();
                 captureNextFrame = false;
             }
-
-            
-            // for (int i = 0; i < 2 && uploadQueue.Count > 0; i++)
-            // {
-            //     var mesh = uploadQueue.Dequeue();
-            //     _renderPipeline.UploadMesh(_graphicsDevice, mesh);
-            // }
-            
-            // for (int i = 0; i < uploadsPerFrame; i++)
-            // {
-            //     if (readyMeshes.TryDequeue(out var mesh))
-            //     {
-            //         _renderPipeline.UploadMesh(_graphicsDevice, mesh);
-            //         mesh.Vertices = null;
-            //         mesh.Indices = null;
-            //         mesh.colorIds = null;
-            //     }
-            // }
 
             
             double now = stopwatch.Elapsed.TotalSeconds;
@@ -389,6 +370,7 @@ public class AppWindow
             {
                 movement = Vector3.Normalize(movement) * speed * deltaTime;
                 _renderPipeline.UpdateCamera(ref _graphicsDevice, movement, Vector3.Zero, deltaTime);
+                chunkManager.Update(_renderPipeline.getCameraPosition());
             }
 
             if (rotation != Vector3.Zero)
@@ -399,7 +381,7 @@ public class AppWindow
             
             
             
-            var cameraPositon = _renderPipeline.getCameraPosition();
+            // var cameraPositon = _renderPipeline.getCameraPosition();
             
 
             // while (drawOnce < 1)
@@ -416,7 +398,7 @@ public class AppWindow
        
         
         DisposeResources();
-
+        chunkManager.Dispose();
         
     }
 
