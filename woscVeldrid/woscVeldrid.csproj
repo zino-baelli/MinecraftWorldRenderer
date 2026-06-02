@@ -21,6 +21,7 @@
 
     <ItemGroup>
       <Folder Include="dll\" />
+      <Folder Include="Meshes\" />
     </ItemGroup>
     
     <Target Name="CopyNativeDLL" AfterTargets="Build">
