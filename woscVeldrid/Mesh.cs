@@ -31,50 +31,21 @@ public class Mesh
         return builder.ToString();
     }
     
-    // public Mesh GenerateLOD(float ratio)
-    // {
-    //     int vertexCount = this.Vertices.Count;
-    //     int indexCount = this.Indices.Count;
-    //
-    //     // Flatten positions
-    //     float[] positions = new float[vertexCount * 3];
-    //     for (int i = 0; i < vertexCount; i++)
-    //     {
-    //         positions[i * 3 + 0] = this.Vertices[i].Position.X;
-    //         positions[i * 3 + 1] = this.Vertices[i].Position.Y;
-    //         positions[i * 3 + 2] = this.Vertices[i].Position.Z;
-    //     }
-    //
-    //     uint[] indices = this.Indices.ToArray();
-    //
-    //     int targetIndexCount = (int)(indexCount * ratio);
-    //     uint[] destination = new uint[indices.Length];
-    //
-    //     float error;
-    //
-    //     var resultCount = (int)MeshoptNative.meshopt_simplify_wrapper(
-    //         destination,
-    //         indices,
-    //         (UIntPtr)indexCount,
-    //         positions,
-    //         (UIntPtr)vertexCount,
-    //         (UIntPtr)(sizeof(float) * 3),
-    //         (UIntPtr)targetIndexCount,
-    //         1e-2f,
-    //         0,
-    //         out error
-    //     );
-    //
-    //     // Trim result
-    //     Array.Resize(ref destination, resultCount);
-    //
-    //     return new Mesh
-    //     {
-    //         Vertices = this.Vertices, // reuse
-    //         Indices = new List<uint>(destination),
-    //         colorIds = this.colorIds
-    //     };
-    // }
+    public Mesh Clone()
+    {
+        var mesh = new Mesh();
+
+        mesh.Vertices = new Vertex[Vertices.Length];
+        Array.Copy(Vertices, mesh.Vertices, Vertices.Length);
+
+        mesh.Indices = new uint[Indices.Length];
+        Array.Copy(Indices, mesh.Indices, Indices.Length);
+
+        mesh.ColorIds = new int[ColorIds.Length];
+        Array.Copy(ColorIds, mesh.ColorIds, ColorIds.Length);
+
+        return mesh;
+    }
     
     public void Simplify(
         // uint[] indices,

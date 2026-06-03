@@ -145,7 +145,7 @@ public class ChunkStreamingManager
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Chunk load failed {coord.X},{coord.Z}: {e.Message}");
+                    // Console.WriteLine($"Chunk load failed {coord.X},{coord.Z}: {e.Message}");
                 }
             }
         });
