@@ -5,6 +5,7 @@ using woscVeldrid.Shader;
 var windowRenderer = new AppWindow(1920, 1080, "WoSc");
 string[] files = Directory.GetFiles(@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region", "*.mca", SearchOption.TopDirectoryOnly);
 
+var startTime = DateTime.Now;
 
 //for creating meshes
 // var fileLoadAmount =files.Length;
@@ -20,12 +21,18 @@ var renderMeshes = true;
 // files = [@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region\r.-1.-1.mca"];
 
 
+// var lodBuilder = new LodBuilder(
+//     error: 0.1f,
+//     ratio: 0.15f,
+//     maxError: 2.0f,
+//     maxRatio: 0.85f
+//     );
 var lodBuilder = new LodBuilder(
-    error: 0.1f,
-    ratio: 0.15f,
-    maxError: 2.0f,
-    maxRatio: 0.85f
-    );
+    error: 0.08f,
+    ratio: 0.12f,
+    maxError: 1.2f,
+    maxRatio: 0.65f
+);
 
 HashSet<string> blockTypeSet = new HashSet<string>();
 var blockNameId = Helper.GetBlockToIdFromFile("../../../TestData/blockPaletteComplete.csv");
@@ -95,14 +102,16 @@ else
 }
 
 
-
+var endTIme = DateTime.Now;
+var deltaTime =  endTIme - startTime;
+Console.WriteLine($"{deltaTime.Minutes} minutes, {deltaTime.Seconds} seconds");
 
 // windowRenderer.BlockIds = blockNameId;
 windowRenderer.ColorPalette = blockPalette;
 if (renderMeshes)
 {
     // windowRenderer.Render(meshes.ToArray());
-    meshLocation = meshLocation + "/lod0";
+    // meshLocation = meshLocation + "/lod2";
     windowRenderer.RenderStreamed(meshLocation);
 }
 // windowRenderer.Render(lods.ToArray());

@@ -81,7 +81,7 @@ public static class MeshBuilder
         }
         mesh.Vertices = vertices.ToArray();
         mesh.Indices = indices.ToArray();
-        mesh.ColorIds = colorIds.ToArray();
+        // mesh.ColorIds = colorIds.ToArray();
         return mesh;
     }
 
@@ -149,14 +149,15 @@ public static class MeshBuilder
             var pos = FaceVertices[face][i];
             var vertex = new Vertex(
                 new Vector3(worldX, worldY, worldZ) + pos,
-                FaceNormals[face]
+                FaceNormals[face],
+                colorId
                 // ,UVs[i]
             );
 
             // mesh.Vertices.Add(vertex);
             // mesh.ColorIds.Add(colorId);
            vertices.Add(vertex);
-           colorIds.Add(colorId);
+           // colorIds.Add(colorId);
         }
 
         // two triangles

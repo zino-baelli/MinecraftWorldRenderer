@@ -370,7 +370,7 @@ public class RenderPipeline
             vertices[i] = new VertexPositionNormalColor(
                 v.Position,
                 v.Normal,
-                mesh.ColorIds[i]);
+                v.ColorId);
         }
 
         var indices = mesh.Indices.ToArray();
@@ -406,7 +406,7 @@ public class RenderPipeline
             vertices[i] = new VertexPositionNormalColor(
                 v.Position,
                 v.Normal,
-                mesh.ColorIds[i]);
+               v.ColorId);
         }
 
         var indices = mesh.Indices;
@@ -485,7 +485,7 @@ public class RenderPipeline
         graphicsDevice.SwapBuffers();
     }
     
-    public void DrawFromMesh(ref GraphicsDevice graphicsDevice, IEnumerable<GpuMesh> meshes)
+    public void DrawFromMesh(ref GraphicsDevice graphicsDevice, IEnumerable<(GpuMesh m, int lod)> meshes)
     {
         
         
@@ -509,11 +509,20 @@ public class RenderPipeline
             //
             // _commandList.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
             
-            _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
-            _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
+            // _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
+            // _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
+            //
+            // _commandList.DrawIndexed(
+            //     mesh.IndexCount,
+            //     1,
+            //     0,
+            //     0,
+            //     0);
+            _commandList.SetVertexBuffer(0, mesh.m.VertexBuffer);
+            _commandList.SetIndexBuffer(mesh.m.IndexBuffer, IndexFormat.UInt32);
         
             _commandList.DrawIndexed(
-                mesh.IndexCount,
+                mesh.m.IndexCount,
                 1,
                 0,
                 0,

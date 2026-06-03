@@ -12,7 +12,7 @@ public class Mesh
     
     public Vertex[] Vertices;
     public uint[] Indices;
-    public int[] ColorIds;
+    // public int[] ColorIds;
 
 
     public override string ToString()
@@ -41,8 +41,8 @@ public class Mesh
         mesh.Indices = new uint[Indices.Length];
         Array.Copy(Indices, mesh.Indices, Indices.Length);
 
-        mesh.ColorIds = new int[ColorIds.Length];
-        Array.Copy(ColorIds, mesh.ColorIds, ColorIds.Length);
+        // mesh.ColorIds = new int[ColorIds.Length];
+        // Array.Copy(ColorIds, mesh.ColorIds, ColorIds.Length);
 
         return mesh;
     }

@@ -11,4 +11,10 @@ public class GpuMesh
     public uint VertexCount;
     
     public Vector3 WorldPosition;
+    
+    public void Dispose()
+    {
+        VertexBuffer?.Dispose();
+        IndexBuffer?.Dispose();
+    }
 }
