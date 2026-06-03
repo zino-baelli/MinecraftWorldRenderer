@@ -11,8 +11,11 @@ var startTime = DateTime.Now;
 // var fileLoadAmount =files.Length;
 // var loadMeshFromFiles = false;
 // var renderMeshes = false;
+// var fileLoadAmount =1;
+// var loadMeshFromFiles = false;
+// var renderMeshes = false;
 
-//for rendering
+// //for rendering
 var fileLoadAmount = 0;
 var loadMeshFromFiles = true;
 var renderMeshes = true;
@@ -39,6 +42,8 @@ var blockNameId = Helper.GetBlockToIdFromFile("../../../TestData/blockPaletteCom
 var blockPalette = Helper.GetColorPaletteFromFile("../../../TestData/blockPaletteComplete.csv");
 
 var meshLocation = @"J:\wosc\meshes";
+// var meshLocation = @"J:\wosc\meshes\single";
+
 string[] mFiles = Directory.GetFiles(meshLocation, "*.mesh", SearchOption.TopDirectoryOnly);
 
 var setA = new HashSet<string>(

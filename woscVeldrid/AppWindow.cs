@@ -83,12 +83,42 @@ public class AppWindow
         
         _renderPipeline = new RenderPipeline(vertexCode, fragmentCode, _width, _height);
 
+        var fov = 1.04719755f;
+        var projectionScale = _graphicsDevice.MainSwapchain.Framebuffer.Height /
+                              (2f * MathF.Tan(fov * 0.5f));
+
+        // var chunkManager = new ChunkStreamingManager(
+        //     _graphicsDevice,
+        //     _renderPipeline,
+        //     meshReader,
+        //     meshLocation,
+        //     70, 
+        //     200,
+        //     projectionScale,
+        //     LodSelectionType.None
+        //     );
+        
         var chunkManager = new ChunkStreamingManager(
             _graphicsDevice,
             _renderPipeline,
             meshReader,
             meshLocation,
-            50, 200);
+            70, 
+            200,
+            projectionScale,
+            LodSelectionType.Distance
+        );
+        
+        // var chunkManager = new ChunkStreamingManager(
+        //     _graphicsDevice,
+        //     _renderPipeline,
+        //     meshReader,
+        //     meshLocation,
+        //     70, 
+        //     200,
+        //     projectionScale,
+        //     LodSelectionType.ScreenSpace
+        // );
         
         
         _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, ColorPalette);

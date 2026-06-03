@@ -44,6 +44,9 @@ public static class FileProcessor
         
         foreach (var kv in chunks)
         {
+        // {
+        //     var kv = chunks.First();
+            
             var worldX = kv.Key.x;
             var worldZ = kv.Key.z;
 
