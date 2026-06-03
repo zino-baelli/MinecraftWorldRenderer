@@ -24,7 +24,11 @@ float rand(vec2 co)
 
 void main()
 {
-     vec4 viewPos = view * vec4(Position, 1.0);
+    vec4 worldPos = model * vec4(Position,1.0);
+
+     //vec4 viewPos =view * vec4(Position, 1.0);
+     vec4 viewPos =view * worldPos;
+
 
     gl_Position = projection * viewPos;
     fsNormal = Normal;

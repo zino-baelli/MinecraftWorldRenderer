@@ -1,4 +1,5 @@
-﻿using Veldrid;
+﻿using System.Numerics;
+using Veldrid;
 
 namespace woscVeldrid;
 
@@ -8,4 +9,6 @@ public class GpuMesh
     public DeviceBuffer IndexBuffer;
     public uint IndexCount;
     public uint VertexCount;
+    
+    public Vector3 WorldPosition;
 }

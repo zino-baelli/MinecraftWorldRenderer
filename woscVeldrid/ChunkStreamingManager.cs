@@ -20,6 +20,8 @@ public class ChunkStreamingManager
 
     private bool _running = true;
 
+    private const int CHUNK_SIZE = 16;
+
     public ChunkStreamingManager(
         GraphicsDevice gd,
         RenderPipeline pipeline,
@@ -69,14 +71,18 @@ public class ChunkStreamingManager
     // =========================
     private void UploadReadyMeshes()
     {
+        
         int uploadsPerFrame = 2;
 
         for (int i = 0; i < uploadsPerFrame; i++)
         {
             if (!_readyQueue.TryDequeue(out var item))
                 break;
-
+            // Console.WriteLine($"Uploading chunk {item.coord}");
+            
             var gpuMesh = _pipeline.UploadMeshStreamed(_gd, item.mesh);
+            
+            gpuMesh.WorldPosition = new Vector3(item.coord.X * CHUNK_SIZE,0,item.coord.Z * CHUNK_SIZE);
 
             _loadedChunks[item.coord] = gpuMesh;
 
@@ -84,6 +90,7 @@ public class ChunkStreamingManager
             item.mesh.Vertices = null;
             item.mesh.Indices = null;
             item.mesh.ColorIds = null;
+            // Console.WriteLine($"GPU meshes: {_loadedChunks.Count}");
         }
     }
 
@@ -193,5 +200,10 @@ public class ChunkStreamingManager
             kv.Value.VertexBuffer.Dispose();
             kv.Value.IndexBuffer.Dispose();
         }
+    }
+
+    public IEnumerable<GpuMesh> GetMeshes()
+    {
+        return _loadedChunks.Values;
     }
 }

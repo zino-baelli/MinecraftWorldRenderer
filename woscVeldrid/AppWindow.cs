@@ -268,11 +268,7 @@ public class AppWindow
 
         var meshReader = new MeshIOCompressed();
         
-        var chunkManager = new ChunkStreamingManager(
-            _graphicsDevice,
-            _renderPipeline,
-            meshReader,
-            meshLocation);
+      
         
         RenderDoc rd;
         if (RenderDoc.Load(out rd))
@@ -289,7 +285,11 @@ public class AppWindow
         
         _renderPipeline = new RenderPipeline(vertexCode, fragmentCode, _width, _height);
 
-  
+        var chunkManager = new ChunkStreamingManager(
+            _graphicsDevice,
+            _renderPipeline,
+            meshReader,
+            meshLocation);
         
         
         _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, ColorPalette);
@@ -370,7 +370,7 @@ public class AppWindow
             {
                 movement = Vector3.Normalize(movement) * speed * deltaTime;
                 _renderPipeline.UpdateCamera(ref _graphicsDevice, movement, Vector3.Zero, deltaTime);
-                chunkManager.Update(_renderPipeline.getCameraPosition());
+                // chunkManager.Update(_renderPipeline.getCameraPosition());
             }
 
             if (rotation != Vector3.Zero)
@@ -379,14 +379,15 @@ public class AppWindow
                 _renderPipeline.UpdateCamera(ref _graphicsDevice, Vector3.Zero, rotation, deltaTime);
             }
             
-            
+            chunkManager.Update(_renderPipeline.getCameraPosition());
+            _renderPipeline.DrawFromMesh(ref _graphicsDevice, chunkManager.GetMeshes());
             
             // var cameraPositon = _renderPipeline.getCameraPosition();
             
 
             // while (drawOnce < 1)
             {
-                _renderPipeline.Draw(ref _graphicsDevice);
+                // _renderPipeline.Draw(ref _graphicsDevice);
                 // _renderPipeline.TestDraw(ref _graphicsDevice);
                 // drawOnce++;
             }

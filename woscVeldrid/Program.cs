@@ -6,12 +6,13 @@ var windowRenderer = new AppWindow(1920, 1080, "WoSc");
 string[] files = Directory.GetFiles(@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region", "*.mca", SearchOption.TopDirectoryOnly);
 
 
-var fileLoadAmount =10;
+// var fileLoadAmount =files.Length;
+var fileLoadAmount = 0;
 var loadMeshFromFiles = true;
 var renderMeshes = true;
 
 
-// files = [@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region\r.-12.-22.mca"];
+// files = [@"C:\Users\zino\Downloads\Greenfield v0.5.4\Greenfield v0.5.4\region\r.-1.-1.mca"];
 
 // var test = Path.GetFileNameWithoutExtension(files[0]);
 // windowRenderer.Render();
@@ -204,7 +205,7 @@ else
 windowRenderer.ColorPalette = blockPalette;
 if (renderMeshes)
 {
-    windowRenderer.Render(meshes.ToArray());
+    // windowRenderer.Render(meshes.ToArray());
     windowRenderer.RenderStreamed(meshLocation);
 }
 // windowRenderer.Render(lods.ToArray());

@@ -50,6 +50,7 @@ public class RenderPipeline
     private Vector3 _cameraPosition;
     private Vector3 _cameraRotation;
     private Vector3 _cameraTarget;
+    private Matrix4x4 _modelMatrix;
     private float _time;
     private Dictionary<int, Vector3> _colorPalette;
     private List<GpuMesh> _gpuMeshes = new();
@@ -89,6 +90,7 @@ public class RenderPipeline
                        Matrix4x4.CreateRotationZ(_cameraRotation.Z);
         
         //model Matrix
+        _modelMatrix = Matrix4x4.Identity;
         _cameraMatrices[0] = Matrix4x4.Identity;
         
         //view Matrix
@@ -443,8 +445,8 @@ public class RenderPipeline
         _commandList.ClearDepthStencil(1f);                     // clear depth to 1.0 (max)
         
         _commandList.SetPipeline(_pipeline);
-        _commandList.SetVertexBuffer(0, _vertexBuffer);
-        _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
+        // _commandList.SetVertexBuffer(0, _vertexBuffer);
+        // _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
         _commandList.SetGraphicsResourceSet(0, _cameraSet);
         _commandList.SetGraphicsResourceSet(1, _pointSettingsSet);
         _commandList.SetGraphicsResourceSet(2, _timeSet); 
@@ -457,24 +459,67 @@ public class RenderPipeline
         //     instanceStart: 0);
   
         
-        // foreach (var mesh in _gpuMeshes)
-        // {
-        //     _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
-        //     _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
-        //
-        //     _commandList.DrawIndexed(
-        //         mesh.IndexCount,
-        //         1,
-        //         0,
-        //         0,
-        //         0);
-        // }
-        _commandList.DrawIndexed(
-            (uint)_indexCount,
-            1,
-            0,
-            0,
-            0);
+        foreach (var mesh in _gpuMeshes)
+        {
+            _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
+            _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
+        
+            _commandList.DrawIndexed(
+                mesh.IndexCount,
+                1,
+                0,
+                0,
+                0);
+        }
+        // _commandList.DrawIndexed(
+        //     (uint)_indexCount,
+        //     1,
+        //     0,
+        //     0,
+        //     0);
+        _commandList.End();
+        
+        
+
+        graphicsDevice.SubmitCommands(_commandList);
+        graphicsDevice.SwapBuffers();
+    }
+    
+    public void DrawFromMesh(ref GraphicsDevice graphicsDevice, IEnumerable<GpuMesh> meshes)
+    {
+        
+        
+        _commandList.Begin();
+        _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
+        // _commandList.SetFramebuffer(_framebuffer);
+        
+        _commandList.ClearColorTarget(0, RgbaFloat.Black);       // clear to black (or any color)
+        _commandList.ClearDepthStencil(1f);                     // clear depth to 1.0 (max)
+        
+        _commandList.SetPipeline(_pipeline);
+      
+        _commandList.SetGraphicsResourceSet(0, _cameraSet);
+        _commandList.SetGraphicsResourceSet(1, _pointSettingsSet);
+        _commandList.SetGraphicsResourceSet(2, _timeSet); 
+        _commandList.SetGraphicsResourceSet(3, _paletteSet);
+        
+        foreach (var mesh in meshes)
+        {
+            // _cameraMatrices[0] = Matrix4x4.CreateTranslation(mesh.WorldPosition);
+            //
+            // _commandList.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
+            
+            _commandList.SetVertexBuffer(0, mesh.VertexBuffer);
+            _commandList.SetIndexBuffer(mesh.IndexBuffer, IndexFormat.UInt32);
+        
+            _commandList.DrawIndexed(
+                mesh.IndexCount,
+                1,
+                0,
+                0,
+                0);
+        }
+      
         _commandList.End();
         
         
@@ -597,7 +642,11 @@ public class RenderPipeline
         
         //projection Matrix with 60deg fov
         _cameraMatrices[2] = Matrix4x4.CreatePerspectiveFieldOfView(1.04719755f, _width/_height, 0.1f, 10000);
-        graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices.ToArray());
+        
+        _cameraMatrices[0] = _modelMatrix;
+        
+        graphicsDevice.UpdateBuffer(_cameraBuffer, 0, _cameraMatrices);
+
     }
 
     public void DisposeResources()
