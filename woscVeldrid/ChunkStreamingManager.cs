@@ -17,6 +17,7 @@ public class ChunkStreamingManager
     private readonly ConcurrentQueue<(ChunkCoord coord, Mesh mesh)> _readyQueue = new();
 
     private readonly int _viewDistance = 6;
+    private readonly int _uploadsPerFrame = 2;
 
     private bool _running = true;
 
@@ -26,12 +27,17 @@ public class ChunkStreamingManager
         GraphicsDevice gd,
         RenderPipeline pipeline,
         MeshIOCompressed meshReader,
-        string meshFolder)
+        string meshFolder,
+        int viewDistance,
+        int uploadsPerFrame
+        )
     {
         _gd = gd;
         _pipeline = pipeline;
         _meshReader = meshReader;
         _meshFolder = meshFolder;
+        _viewDistance = viewDistance;
+        _uploadsPerFrame = uploadsPerFrame;
 
         StartWorker();
     }
@@ -72,9 +78,9 @@ public class ChunkStreamingManager
     private void UploadReadyMeshes()
     {
         
-        int uploadsPerFrame = 2;
+        // int uploadsPerFrame = 2;
 
-        for (int i = 0; i < uploadsPerFrame; i++)
+        for (int i = 0; i < _uploadsPerFrame; i++)
         {
             if (!_readyQueue.TryDequeue(out var item))
                 break;
@@ -114,6 +120,7 @@ public class ChunkStreamingManager
         foreach (var coord in toRemove)
         {
             _loadedChunks.Remove(coord);
+            _requestedChunks.Remove(coord);
         }
     }
 

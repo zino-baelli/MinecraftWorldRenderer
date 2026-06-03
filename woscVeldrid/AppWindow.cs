@@ -289,7 +289,8 @@ public class AppWindow
             _graphicsDevice,
             _renderPipeline,
             meshReader,
-            meshLocation);
+            meshLocation,
+            50, 200);
         
         
         _renderPipeline.CreateResources(ref _graphicsDevice, PrimitiveTopology.TriangleList, ColorPalette);

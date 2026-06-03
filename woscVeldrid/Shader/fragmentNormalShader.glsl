@@ -13,7 +13,11 @@ void main()
 {
     vec3 lightDir = normalize(vec3(0.3, 1.0, 0.5));
 
-    float lighting = max(dot(normalize(fsNormal), lightDir), 0.0);
+    float ambient = 0.2;
+    float diffuse = max(dot(normalize(fsNormal), lightDir), 0.0);
+
+    float lighting = ambient + diffuse;
+    lighting = clamp(lighting, 0.0, 1.0);
 
     vec3 baseColor = vec3(0.5, 0.5, 0.5);
 
