@@ -160,7 +160,7 @@ public class ChunkStreamingManager
     // =========================
     private void UploadReadyMeshes()
     {
-        for (int i = 0; i < _uploadsPerFrame; i++)
+        for (int i = 0; i < _uploadsPerFrame && i < _readyQueue.Count ; i++)
         {
             if (!_readyQueue.TryDequeue(out var item))
                 break;
@@ -319,11 +319,34 @@ public class ChunkStreamingManager
 
         int desired;
 
-        if (screenSize > 200) desired = 0;
-        else if (screenSize > 100) desired = 1;
-        else if (screenSize > 50)  desired = 2;
-        else if (screenSize > 2)  desired = 3;
-        else desired = -1;
+        // if (screenSize > 200) desired = 0;
+        // else if (screenSize > 100) desired = 1;
+        // else if (screenSize > 50)  desired = 2;
+        // else if (screenSize > 2)  desired = 3;
+        // else desired = -1;
+        
+        // if (screenSize > 0.5f)       desired = 0; // very close
+        // else if (screenSize > 0.25f) desired = 1;
+        // else if (screenSize > 0.1f)  desired = 2;
+        // else if (screenSize > 0.05f) desired = 3;
+        // else                         desired = -1; // culled
+        
+        // if (screenSize > 0.08f)       desired = 0;
+        // else if (screenSize > 0.065f) desired = 1;
+        // else if (screenSize > 0.055f) desired = 2;
+        // else if (screenSize > 0.045f) desired = 3;
+        // else                          desired = -1;
+        
+        if (screenSize > 0.04f)      desired = 0;
+        else if (screenSize > 0.03f)  desired = 1;
+        else if (screenSize > 0.02f) desired = 2;
+        else if (screenSize > 0.01f)  desired = 3;
+        else                          desired = -1;
+
+        // if (desired > -1)
+        // {
+        //     Console.WriteLine($" ss = {screenSize} lod = {desired}");
+        // }
 
         if (!_stableLod.TryGetValue(chunk, out int current))
         {
@@ -424,10 +447,12 @@ public class ChunkStreamingManager
         float distance = Vector3.Distance(cameraPos, chunkCenter);
 
         distance = MathF.Max(distance, CHUNK_SIZE);
+        distance = MathF.Max(distance, 0.001f);
 
         float radius = CHUNK_SIZE * 0.707f;
 
-        return (radius / distance) * projectionScale;
+        // return (radius / distance) * projectionScale;
+        return radius / distance;
     }
 
     private int Mod(int x, int m) => (x % m + m) % m;

@@ -84,7 +84,8 @@ public class RenderPipeline
         List<VertexPositionNormalColor> vertices = new();
         List<uint> indices = new();
         
-        _cameraRotation = Vector3.Zero;
+        // _cameraRotation = Vector3.Zero;
+        _cameraRotation = new Vector3(-9.98f, 10, 0);
         var rotation = Matrix4x4.CreateRotationX(_cameraRotation.X) * 
                        Matrix4x4.CreateRotationY(_cameraRotation.Y)  * 
                        Matrix4x4.CreateRotationZ(_cameraRotation.Z);
@@ -94,18 +95,18 @@ public class RenderPipeline
         _cameraMatrices[0] = Matrix4x4.Identity;
         
         //view Matrix
-        var cameraPosition =  new Vector3(0, 5,-2);
+        // var cameraPosition =  new Vector3(0, 5,-2);
+        var cameraPosition =  new Vector3(0, 130,-2);
         // var cameraPosition =  new Vector3(6000, 1,1500);
         _cameraPosition = cameraPosition;
         
         var forward =Vector3.Normalize(Vector3.Transform(Vector3.UnitZ, rotation));
 
-
         // var target = new Vector3(0, 0, 0);
         var target = _cameraPosition + forward;
         // _cameraTarget = new Vector3(6100, 1, 1520);
 
-        _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, _cameraTarget, Vector3.UnitY);
+        _cameraMatrices[1] = Matrix4x4.CreateLookAt(_cameraPosition, target, Vector3.UnitY);
         // _cameraMatrices[1] = Matrix4x4.CreateLookAt(cameraPosition, _cameraForward, Vector3.UnitY);
 
         

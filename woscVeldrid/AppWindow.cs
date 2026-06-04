@@ -68,11 +68,11 @@ public class AppWindow
         
       
         
-        RenderDoc rd;
-        if (RenderDoc.Load(out rd))
-        {
-            rd.SetCaptureSavePath(@"C:\Users\zino\Desktop\renderDocCaptures\");
-        }
+        // RenderDoc rd;
+        // if (RenderDoc.Load(out rd))
+        // {
+        //     rd.SetCaptureSavePath(@"C:\Users\zino\Desktop\renderDocCaptures\");
+        // }
         
         _graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(options, _window);
         
@@ -92,8 +92,8 @@ public class AppWindow
         //     _renderPipeline,
         //     meshReader,
         //     meshLocation,
-        //     70, 
-        //     200,
+        //     50, 
+        //     500,
         //     projectionScale,
         //     LodSelectionType.None
         //     );
@@ -103,8 +103,8 @@ public class AppWindow
             _renderPipeline,
             meshReader,
             meshLocation,
-            70, 
-            200,
+            50, 
+            500,
             projectionScale,
             LodSelectionType.Distance
         );
@@ -114,8 +114,8 @@ public class AppWindow
         //     _renderPipeline,
         //     meshReader,
         //     meshLocation,
-        //     70, 
-        //     200,
+        //     50, 
+        //     500,
         //     projectionScale,
         //     LodSelectionType.ScreenSpace
         // );
@@ -132,8 +132,8 @@ public class AppWindow
             if(keyEvent.Key == Veldrid.Key.Space)
             {
                 Console.WriteLine("Space bar pressed");
-                uint count = rd.CaptureCount;
-                Console.WriteLine($"Captures: {count}");
+                // uint count = rd.CaptureCount;
+                // Console.WriteLine($"Captures: {count}");
             }
 
             if (keyEvent.Key == Veldrid.Key.C)
@@ -143,7 +143,7 @@ public class AppWindow
 
             if (keyEvent.Key == Key.T)
             {
-                rd.LaunchReplayUI();
+                // rd.LaunchReplayUI();
             }
             
         };
@@ -166,8 +166,8 @@ public class AppWindow
             
             if (captureNextFrame)
             {
-                rd.TriggerCapture();
-                captureNextFrame = false;
+                // rd.TriggerCapture();
+                // captureNextFrame = false;
             }
 
             
